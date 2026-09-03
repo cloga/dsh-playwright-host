@@ -10,11 +10,29 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    runs-on: windows-latest
+  certify:
+    name: certify (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: deepseek-ai/deepseek-harness
+          ref: a66e4702047846cdaa10c66c9d3df3951f5ea70d
+          path: dsh-core
+          persist-credentials: false
+      - uses: actions/setup-node@v6
         with:
           node-version: '24'
-      - run: npm test
+          package-manager-cache: false
+      - name: Verify static bundle and official rc1 source seams
+        run: npm test
+        env:
+          DSH_CORE_PATH: ${{ github.workspace }}/dsh-core
+      - name: Verify pinned Playwright MCP command on Windows
+        if: runner.os == 'Windows'
+        run: npx -y @playwright/mcp@0.0.80 --version
