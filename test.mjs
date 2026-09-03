@@ -10,6 +10,7 @@ const manifestUrl = new URL('./package.json', import.meta.url)
 const patchUrl = new URL('./cordis.patch.yml', import.meta.url)
 const readmeUrl = new URL('./README.md', import.meta.url)
 const changelogUrl = new URL('./CHANGELOG.md', import.meta.url)
+const releaseWorkflowUrl = new URL('./.github/workflows/release.yml', import.meta.url)
 const dshCorePath = process.env.DSH_CORE_PATH?.trim()
 const DSH_RC1_COMMIT = 'a66e4702047846cdaa10c66c9d3df3951f5ea70d'
 
@@ -30,8 +31,9 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   const patch = await readFile(patchUrl, 'utf8')
   const readme = await readFile(readmeUrl, 'utf8')
   const changelog = await readFile(changelogUrl, 'utf8')
+  const releaseWorkflow = (await readFile(releaseWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   assert.equal(manifest.name, 'dsh-playwright-host')
-  assert.equal(manifest.version, '0.1.1')
+  assert.equal(manifest.version, '0.1.2')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
   for (const marker of [
     'id: mcp-playwright',
@@ -48,13 +50,22 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   ]) assert.match(patch, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   assert.match(readme, /Host scope/)
   assert.match(readme, /concurrent Sessions can affect the same browser state/)
-  assert.match(readme, /github:cloga\/dsh-playwright-host#v0\.1\.1/)
+  assert.match(readme, /github:cloga\/dsh-playwright-host#v0\.1\.2/)
   assert.match(readme, /development-only/)
   assert.match(readme, /Do not restart or replace a running DSH Host/)
   assert.match(readme, /exact interruption list/)
   assert.match(readme, /0\.1\.2-rc\.1/)
   assert.match(readme, new RegExp(DSH_RC1_COMMIT))
-  assert.match(changelog, /0\.1\.1/)
+  assert.match(changelog, /0\.1\.2/)
+  for (const marker of [
+    "tags:\n      - 'v*'",
+    DSH_RC1_COMMIT,
+    'git cat-file -t "refs/tags/$GITHUB_REF_NAME"',
+    'npm test',
+    'npm pack --pack-destination artifacts',
+    'sha256sum -- *.tgz > SHA256SUMS',
+    'gh release create "$GITHUB_REF_NAME" artifacts/*.tgz artifacts/SHA256SUMS',
+  ]) assert.ok(releaseWorkflow.includes(marker), `release workflow omits ${marker}`)
   assert.equal(root, path.dirname(fileURLToPath(manifestUrl)))
 })
 

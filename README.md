@@ -9,7 +9,7 @@ This repository is a thin, reviewable composition bundle. Browser automation com
 Use the immutable compatibility tag:
 
 ```powershell
-dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.1
+dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.2
 ```
 
 An unpinned `github:cloga/dsh-playwright-host` install follows the moving default branch and is development-only, not reviewed deployment evidence.
@@ -26,7 +26,7 @@ The composed tree must contain one `mcp-playwright` row using `@deepseek-ai/dsh-
 
 ## Compatibility certification
 
-Version `0.1.1` certifies the bundle against official DeepSeek Harness `0.1.2-rc.1` at immutable source commit `a66e4702047846cdaa10c66c9d3df3951f5ea70d`. The source-seam test verifies `@deepseek-ai/dsh-mcp-client@0.1.2-rc.1` still accepts the exact stdio fields used by `cordis.patch.yml` and preserves startup readiness, fail-loud activation, effect-owned disposal, reconnect supervision, tool replacement, and per-call timeout markers.
+Version `0.1.2` certifies the bundle against official DeepSeek Harness `0.1.2-rc.1` at immutable source commit `a66e4702047846cdaa10c66c9d3df3951f5ea70d`. The source-seam test verifies `@deepseek-ai/dsh-mcp-client@0.1.2-rc.1` still accepts the exact stdio fields used by `cordis.patch.yml` and preserves startup readiness, fail-loud activation, effect-owned disposal, reconnect supervision, tool replacement, and per-call timeout markers.
 
 The bundle runtime remains Windows-specific because it launches installed Microsoft Edge. Linux CI validates only the platform-neutral official DSH source seam; it does not claim Linux runtime support.
 
