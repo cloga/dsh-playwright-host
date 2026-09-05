@@ -13,9 +13,16 @@ const changelogUrl = new URL('./CHANGELOG.md', import.meta.url)
 const releaseWorkflowUrl = new URL('./.github/workflows/release.yml', import.meta.url)
 const dshCorePath = process.env.DSH_CORE_PATH?.trim()
 const DSH_RC1_COMMIT = 'a66e4702047846cdaa10c66c9d3df3951f5ea70d'
+const DSH_ALPHA1_COMMIT = 'd347e703908d0406b7a7ef80e3a0e594d86b2215'
+const CERTIFIED_DSH_SOURCES = new Map([
+  [DSH_RC1_COMMIT, { version: '0.1.2-rc.1', label: 'rc.1' }],
+  [DSH_ALPHA1_COMMIT, { version: '0.1.3-alpha.1', label: 'alpha.1' }],
+])
 
-function assertRc1Commit(commit) {
-  assert.equal(commit, DSH_RC1_COMMIT, 'DSH_CORE_PATH must be the exact certified rc1 commit')
+function certifiedSource(commit) {
+  const certification = CERTIFIED_DSH_SOURCES.get(commit)
+  assert.ok(certification, 'DSH_CORE_PATH must be an exact certified DSH commit')
+  return certification
 }
 
 async function readSource(relativePath) {
@@ -56,7 +63,11 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   assert.match(readme, /exact interruption list/)
   assert.match(readme, /0\.1\.2-rc\.1/)
   assert.match(readme, new RegExp(DSH_RC1_COMMIT))
+  assert.match(readme, /0\.1\.3-alpha\.1/)
+  assert.match(readme, new RegExp(DSH_ALPHA1_COMMIT))
   assert.match(changelog, /0\.1\.2/)
+  assert.match(changelog, /0\.1\.3-alpha\.1/)
+  assert.match(changelog, new RegExp(DSH_ALPHA1_COMMIT))
   for (const marker of [
     "tags:\n      - 'v*'",
     DSH_RC1_COMMIT,
@@ -69,23 +80,23 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   assert.equal(root, path.dirname(fileURLToPath(manifestUrl)))
 })
 
-test('same-version source cannot substitute a different rc1 commit', () => {
+test('same-version source cannot substitute a different certified commit', () => {
   assert.throws(
-    () => assertRc1Commit('0000000000000000000000000000000000000000'),
-    /exact certified rc1 commit/,
+    () => certifiedSource('0000000000000000000000000000000000000000'),
+    /exact certified DSH commit/,
   )
 })
 
-test('official DSH rc1 source preserves the required mcp-client stdio and lifecycle seams', {
+test('official certified DSH source preserves the required mcp-client stdio and lifecycle seams', {
   skip: !dshCorePath,
 }, async () => {
   const head = execFileSync('git', ['-C', dshCorePath, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-  assertRc1Commit(head)
+  const certification = certifiedSource(head)
   const rootManifest = JSON.parse(await readSource('package.json'))
   const mcpManifest = JSON.parse(await readSource('packages/mcp/mcp-client/package.json'))
-  assert.equal(rootManifest.version, '0.1.2-rc.1')
+  assert.equal(rootManifest.version, certification.version, `root package must match certified ${certification.label} version`)
   assert.equal(mcpManifest.name, '@deepseek-ai/dsh-mcp-client')
-  assert.equal(mcpManifest.version, '0.1.2-rc.1')
+  assert.equal(mcpManifest.version, certification.version, `mcp-client must match certified ${certification.label} version`)
 
   const index = await readSource('packages/mcp/mcp-client/src/index.ts')
   const transport = await readSource('packages/mcp/mcp-client/src/transport.ts')

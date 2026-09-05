@@ -26,13 +26,13 @@ The composed tree must contain one `mcp-playwright` row using `@deepseek-ai/dsh-
 
 ## Compatibility certification
 
-Version `0.1.2` certifies the bundle against official DeepSeek Harness `0.1.2-rc.1` at immutable source commit `a66e4702047846cdaa10c66c9d3df3951f5ea70d`. The source-seam test verifies `@deepseek-ai/dsh-mcp-client@0.1.2-rc.1` still accepts the exact stdio fields used by `cordis.patch.yml` and preserves startup readiness, fail-loud activation, effect-owned disposal, reconnect supervision, tool replacement, and per-call timeout markers.
+Version `0.1.2` retains certification against official DeepSeek Harness `0.1.2-rc.1` at immutable source commit `a66e4702047846cdaa10c66c9d3df3951f5ea70d` and additionally certifies DSH Core `0.1.3-alpha.1` at immutable source commit `d347e703908d0406b7a7ef80e3a0e594d86b2215`. The source-seam test accepts only those exact commit/version pairs. For each certified source, it verifies `@deepseek-ai/dsh-mcp-client` still accepts the exact stdio fields used by `cordis.patch.yml` and preserves startup readiness, fail-loud activation, effect-owned disposal, reconnect supervision, tool replacement, and per-call timeout markers.
 
 The bundle runtime remains Windows-specific because it launches installed Microsoft Edge. Linux CI validates only the platform-neutral official DSH source seam; it does not claim Linux runtime support.
 
 ## Requirements
 
-- DeepSeek Harness `0.1.2-rc.1`, or another version separately verified to provide the same `@deepseek-ai/dsh-mcp-client` seams.
+- DeepSeek Harness `0.1.2-rc.1` or DSH Core `0.1.3-alpha.1`, using the exact certified commits above; any other version must be separately verified to provide the same `@deepseek-ai/dsh-mcp-client` seams.
 - Node.js and `npx` on the Host.
 - Microsoft Edge installed.
 - A DSH model route with image input plus Attachment support for model-visible screenshots; accessibility snapshots work without vision.
@@ -54,14 +54,19 @@ npm test
 npx -y @playwright/mcp@0.0.80 --version
 ```
 
-Run the official rc.1 source-seam certification against a source checkout:
+Run either official source-seam certification against an exact source checkout:
 
 ```powershell
+# DSH Core 0.1.3-alpha.1 at d347e703908d0406b7a7ef80e3a0e594d86b2215
+$env:DSH_CORE_PATH = 'C:\path\to\deepseek-harness-0.1.3-alpha.1'
+npm test
+
+# Retained DSH 0.1.2-rc.1 certification at a66e4702047846cdaa10c66c9d3df3951f5ea70d
 $env:DSH_CORE_PATH = 'C:\path\to\deepseek-harness-0.1.2-rc.1'
 npm test
 ```
 
-When `DSH_CORE_PATH` is present, the test requires root and mcp-client package version `0.1.2-rc.1` and checks the exact config, stdio transport, startup, timeout, tool registration, reconnect, and disposal source markers used by this bundle. An invalid or incomplete checkout fails rather than falling back to the static-only test.
+When `DSH_CORE_PATH` is present, the test requires one of those exact commits and its matching root and mcp-client package version. It checks the config, stdio transport, startup, timeout, tool registration, reconnect, and disposal source markers used by `cordis.patch.yml`. An uncertified commit, mismatched version, or incomplete checkout fails rather than falling back to the static-only test.
 
 ## Remove
 
