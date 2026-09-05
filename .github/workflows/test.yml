@@ -11,25 +11,30 @@ permissions:
 
 jobs:
   certify:
-    name: certify (${{ matrix.os }})
+    name: certify (${{ matrix.os }}, DSH ${{ matrix.dsh.version }})
     strategy:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
+        dsh:
+          - version: 0.1.2-rc.1
+            commit: a66e4702047846cdaa10c66c9d3df3951f5ea70d
+          - version: 0.1.3-alpha.1
+            commit: d347e703908d0406b7a7ef80e3a0e594d86b2215
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/checkout@v6
         with:
           repository: deepseek-ai/deepseek-harness
-          ref: a66e4702047846cdaa10c66c9d3df3951f5ea70d
+          ref: ${{ matrix.dsh.commit }}
           path: dsh-core
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           package-manager-cache: false
-      - name: Verify static bundle and official rc1 source seams
+      - name: Verify static bundle and exact DSH source seams
         run: npm test
         env:
           DSH_CORE_PATH: ${{ github.workspace }}/dsh-core

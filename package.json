@@ -1,6 +1,6 @@
 {
   "name": "dsh-playwright-host",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Host-scope Microsoft Playwright MCP bundle for DeepSeek Harness on Windows.",
   "private": true,
   "type": "module",

@@ -11,8 +11,6 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      DSH_CORE_PATH: ${{ github.workspace }}/dsh-core
     steps:
       - uses: actions/checkout@v6
         with:
@@ -21,7 +19,13 @@ jobs:
         with:
           repository: deepseek-ai/deepseek-harness
           ref: a66e4702047846cdaa10c66c9d3df3951f5ea70d
-          path: dsh-core
+          path: dsh-core-rc1
+          persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: deepseek-ai/deepseek-harness
+          ref: d347e703908d0406b7a7ef80e3a0e594d86b2215
+          path: dsh-core-alpha1
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
@@ -35,6 +39,12 @@ jobs:
           test "$(git cat-file -t "refs/tags/$GITHUB_REF_NAME")" = tag
       - name: Verify exact rc.1 source seam
         run: npm test
+        env:
+          DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-rc1
+      - name: Verify exact alpha.1 source seam
+        run: npm test
+        env:
+          DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-alpha1
       - run: mkdir artifacts
       - run: npm pack --pack-destination artifacts
       - name: Write and verify SHA-256 manifest
