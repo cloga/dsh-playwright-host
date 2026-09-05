@@ -9,7 +9,7 @@ This repository is a thin, reviewable composition bundle. Browser automation com
 Use the immutable compatibility tag:
 
 ```powershell
-dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.2
+dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.3
 ```
 
 An unpinned `github:cloga/dsh-playwright-host` install follows the moving default branch and is development-only, not reviewed deployment evidence.
@@ -26,7 +26,7 @@ The composed tree must contain one `mcp-playwright` row using `@deepseek-ai/dsh-
 
 ## Compatibility certification
 
-Version `0.1.2` retains certification against official DeepSeek Harness `0.1.2-rc.1` at immutable source commit `a66e4702047846cdaa10c66c9d3df3951f5ea70d` and additionally certifies DSH Core `0.1.3-alpha.1` at immutable source commit `d347e703908d0406b7a7ef80e3a0e594d86b2215`. The source-seam test accepts only those exact commit/version pairs. For each certified source, it verifies `@deepseek-ai/dsh-mcp-client` still accepts the exact stdio fields used by `cordis.patch.yml` and preserves startup readiness, fail-loud activation, effect-owned disposal, reconnect supervision, tool replacement, and per-call timeout markers.
+Version `0.1.3` retains source-seam certification against official DeepSeek Harness `0.1.2-rc.1` at immutable source commit `a66e4702047846cdaa10c66c9d3df3951f5ea70d` and adds DSH Core `0.1.3-alpha.1` at immutable source commit `d347e703908d0406b7a7ef80e3a0e594d86b2215`. The source-seam test accepts only those exact commit/version pairs. For each certified source, it checks that `@deepseek-ai/dsh-mcp-client` contains the stdio config and lifecycle source markers relied on by `cordis.patch.yml`, including startup readiness, fail-loud activation, effect-owned disposal, reconnect supervision, tool replacement, and per-call timeout markers. This marker certification is not a behavioral runtime test.
 
 The bundle runtime remains Windows-specific because it launches installed Microsoft Edge. Linux CI validates only the platform-neutral official DSH source seam; it does not claim Linux runtime support.
 
