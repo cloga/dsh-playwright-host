@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4
+
+- Add exact source-seam certification for DSH Core `0.1.5-alpha.1` at commit `5dda764ed3aa172535a7967b06ff95d9cbfe536a`, retaining the `0.1.2-rc.1` and `0.1.3-alpha.1` certifications.
+- Require all three exact commit/version pairs in test and release workflow gates; source-marker certification is not a behavioral Core runtime test.
+- Preserve the Host composition, shared-process isolation caveat, and Microsoft Playwright MCP pin at `@playwright/mcp@0.0.80`.
+- Core 0.1.5 removes `ctx.agent` and changes Inbox and session persistence APIs; this composition-only bundle does not call those APIs. Full target Host/browser activation remains a separate, explicitly authorized verification step.
+
 ## 0.1.3
 
 - Add exact source-seam certification for DSH Core `0.1.3-alpha.1` at commit `d347e703908d0406b7a7ef80e3a0e594d86b2215` while retaining the `0.1.2-rc.1` certification.

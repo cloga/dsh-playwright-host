@@ -27,6 +27,12 @@ jobs:
           ref: d347e703908d0406b7a7ef80e3a0e594d86b2215
           path: dsh-core-alpha1
           persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: deepseek-ai/deepseek-harness
+          ref: 5dda764ed3aa172535a7967b06ff95d9cbfe536a
+          path: dsh-core-015-alpha1
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -45,6 +51,10 @@ jobs:
         run: npm test
         env:
           DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-alpha1
+      - name: Verify exact 0.1.5-alpha.1 source seam
+        run: npm test
+        env:
+          DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-alpha1
       - run: mkdir artifacts
       - run: npm pack --pack-destination artifacts
       - name: Write and verify SHA-256 manifest
