@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { readFile } from 'node:fs/promises'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -12,14 +13,20 @@ const readmeUrl = new URL('./README.md', import.meta.url)
 const changelogUrl = new URL('./CHANGELOG.md', import.meta.url)
 const testWorkflowUrl = new URL('./.github/workflows/test.yml', import.meta.url)
 const releaseWorkflowUrl = new URL('./.github/workflows/release.yml', import.meta.url)
+const agentsUrl = new URL('./AGENTS.md', import.meta.url)
 const dshCorePath = process.env.DSH_CORE_PATH?.trim()
+const dshCoreRef = process.env.DSH_CORE_REF?.trim()
+assert.notEqual(dshCorePath, '', 'DSH_CORE_PATH must be nonempty when configured')
+assert.notEqual(dshCoreRef, '', 'DSH_CORE_REF must be nonempty when configured')
 const DSH_RC1_COMMIT = 'a66e4702047846cdaa10c66c9d3df3951f5ea70d'
 const DSH_ALPHA1_COMMIT = 'd347e703908d0406b7a7ef80e3a0e594d86b2215'
 const DSH_015_ALPHA1_COMMIT = '5dda764ed3aa172535a7967b06ff95d9cbfe536a'
+const DSH_015_ALPHA2_COMMIT = 'b2e3b2a0125854567a4a5fcba75782e42fe84901'
 const CERTIFIED_DSH_SOURCES = new Map([
   [DSH_RC1_COMMIT, { version: '0.1.2-rc.1', label: 'rc.1' }],
   [DSH_ALPHA1_COMMIT, { version: '0.1.3-alpha.1', label: '0.1.3-alpha.1' }],
   [DSH_015_ALPHA1_COMMIT, { version: '0.1.5-alpha.1', label: '0.1.5-alpha.1' }],
+  [DSH_015_ALPHA2_COMMIT, { version: '0.1.5-alpha.2', label: '0.1.5-alpha.2' }],
 ])
 
 function certifiedSource(commit) {
@@ -28,7 +35,28 @@ function certifiedSource(commit) {
   return certification
 }
 
-async function readSource(relativePath) {
+function sourceCommit(corePath, coreRef) {
+  if (coreRef !== undefined) {
+    assert.ok(corePath, 'DSH_CORE_REF requires DSH_CORE_PATH to an existing Git repository')
+    assert.match(coreRef, /^[0-9a-f]{40}$/, 'DSH_CORE_REF must be a full certified commit SHA, not a moving ref')
+    certifiedSource(coreRef)
+    return coreRef
+  }
+  const status = execFileSync('git', ['--no-replace-objects', '-C', corePath, 'status', '--porcelain', '--untracked-files=no'], {
+    encoding: 'utf8', env: { ...process.env, GIT_OPTIONAL_LOCKS: '0' },
+  }).trim()
+  assert.equal(status, '', 'DSH source checkout must have no tracked modifications; use exact DSH_CORE_REF for immutable blob inspection')
+  return execFileSync('git', ['--no-replace-objects', '-C', corePath, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+}
+
+async function readSource(relativePath, commit) {
+  if (dshCoreRef !== undefined) {
+    // Read immutable blobs, not HEAD or working-tree files. Never checkout/reset/fetch.
+    return execFileSync('git', ['--no-replace-objects', '-C', dshCorePath, 'show', `${commit}:${relativePath}`], {
+      encoding: 'utf8',
+      env: { ...process.env, GIT_NO_LAZY_FETCH: '1', GIT_OPTIONAL_LOCKS: '0' },
+    })
+  }
   return readFile(path.join(dshCorePath, ...relativePath.split('/')), 'utf8')
 }
 
@@ -41,10 +69,11 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   const patch = await readFile(patchUrl, 'utf8')
   const readme = await readFile(readmeUrl, 'utf8')
   const changelog = await readFile(changelogUrl, 'utf8')
+  const agents = await readFile(agentsUrl, 'utf8')
   const testWorkflow = (await readFile(testWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   const releaseWorkflow = (await readFile(releaseWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   assert.equal(manifest.name, 'dsh-playwright-host')
-  assert.equal(manifest.version, '0.1.4')
+  assert.equal(manifest.version, '0.1.5')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
   for (const marker of [
     'id: mcp-playwright',
@@ -74,7 +103,7 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
           - '1440x900'`), 'cordis.patch.yml must preserve the reviewed Playwright argument order')
   assert.match(readme, /Host scope/)
   assert.match(readme, /concurrent Sessions can affect the same browser state/)
-  assert.match(readme, /github:cloga\/dsh-playwright-host#v0\.1\.4/)
+  assert.match(readme, /github:cloga\/dsh-playwright-host#v0\.1\.5/)
   assert.match(readme, /development-only/)
   assert.match(readme, /Do not restart or replace a running DSH Host/)
   assert.match(readme, /exact interruption list/)
@@ -84,6 +113,17 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   assert.match(readme, new RegExp(DSH_ALPHA1_COMMIT))
   assert.match(readme, /0\.1\.5-alpha\.1/)
   assert.match(readme, new RegExp(DSH_015_ALPHA1_COMMIT))
+  assert.match(readme, /0\.1\.5-alpha\.2/)
+  assert.match(readme, new RegExp(DSH_015_ALPHA2_COMMIT))
+  assert.match(readme, /DSH_CORE_REF/)
+  assert.match(readme, /latest published release.*v0\.1\.2/)
+  assert.match(changelog, /## 0\.1\.5/)
+  assert.match(changelog, /0\.1\.5-alpha\.2/)
+  assert.match(changelog, new RegExp(DSH_015_ALPHA2_COMMIT))
+  for (const [commit, { version }] of CERTIFIED_DSH_SOURCES) {
+    assert.ok(agents.includes(commit) && agents.includes(version), `AGENTS.md omits ${version} certification`)
+    assert.ok(testWorkflow.includes(`version: ${version}\n            commit: ${commit}`), `test workflow mismatches ${version} certification`)
+  }
   assert.match(changelog, /## 0\.1\.4/)
   assert.match(changelog, /0\.1\.5-alpha\.1/)
   assert.match(changelog, new RegExp(DSH_015_ALPHA1_COMMIT))
@@ -95,9 +135,11 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     'version: 0.1.2-rc.1',
     'version: 0.1.3-alpha.1',
     'version: 0.1.5-alpha.1',
+    'version: 0.1.5-alpha.2',
     DSH_RC1_COMMIT,
     DSH_ALPHA1_COMMIT,
     DSH_015_ALPHA1_COMMIT,
+    DSH_015_ALPHA2_COMMIT,
     'ref: ${{ matrix.dsh.commit }}',
     'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core',
   ]) assert.ok(testWorkflow.includes(marker), `test workflow omits ${marker}`)
@@ -106,6 +148,9 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     DSH_RC1_COMMIT,
     DSH_ALPHA1_COMMIT,
     DSH_015_ALPHA1_COMMIT,
+    DSH_015_ALPHA2_COMMIT,
+    'path: dsh-core-015-alpha2',
+    'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-alpha2',
     'path: dsh-core-015-alpha1',
     'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-alpha1',
     'path: dsh-core-rc1',
@@ -128,21 +173,57 @@ test('same-version source cannot substitute a different certified commit', () =>
   )
 })
 
+test('read-only source refs require a repository and a full certified commit', () => {
+  assert.throws(() => sourceCommit(undefined, DSH_015_ALPHA2_COMMIT), /DSH_CORE_REF requires DSH_CORE_PATH/)
+  for (const ref of ['', 'HEAD', 'dsh-v0.1.5-alpha.2', DSH_015_ALPHA2_COMMIT.slice(0, 12)]) {
+    assert.throws(() => sourceCommit('unused-repository', ref), /full certified commit SHA/)
+  }
+  assert.throws(() => sourceCommit('unused-repository', '0'.repeat(40)), /exact certified DSH commit/)
+  for (const commit of CERTIFIED_DSH_SOURCES.keys()) {
+    assert.equal(sourceCommit('unused-repository', commit), commit)
+  }
+})
+
+test('explicitly blank source configuration fails rather than skipping', () => {
+  for (const key of ['DSH_CORE_PATH', 'DSH_CORE_REF']) {
+    const env = { ...process.env }
+    delete env.DSH_CORE_PATH
+    delete env.DSH_CORE_REF
+    env[key] = '   '
+    const child = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { env, encoding: 'utf8' })
+    assert.equal(child.error, undefined)
+    assert.notEqual(child.status, 0)
+    assert.ok(child.stderr.includes(`${key} must be nonempty`))
+  }
+})
+
+test('checkout mode refuses staged modifications before reading source', async () => {
+  const fixture = await mkdtemp(path.join(tmpdir(), 'playwright-source-dirty-'))
+  try {
+    execFileSync('git', ['init', '--quiet', fixture])
+    await writeFile(path.join(fixture, 'package.json'), '{}\n')
+    execFileSync('git', ['-C', fixture, 'add', 'package.json'])
+    assert.throws(() => sourceCommit(fixture, undefined), /no tracked modifications/)
+  } finally {
+    await rm(fixture, { recursive: true, force: true })
+  }
+})
+
 test('official certified DSH source preserves the required mcp-client stdio and lifecycle seams', {
-  skip: !dshCorePath,
+  skip: !dshCorePath && dshCoreRef === undefined,
 }, async () => {
-  const head = execFileSync('git', ['-C', dshCorePath, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-  const certification = certifiedSource(head)
-  const rootManifest = JSON.parse(await readSource('package.json'))
-  const mcpManifest = JSON.parse(await readSource('packages/mcp/mcp-client/package.json'))
+  const commit = sourceCommit(dshCorePath, dshCoreRef)
+  const certification = certifiedSource(commit)
+  const rootManifest = JSON.parse(await readSource('package.json', commit))
+  const mcpManifest = JSON.parse(await readSource('packages/mcp/mcp-client/package.json', commit))
   assert.equal(rootManifest.version, certification.version, `root package must match certified ${certification.label} version`)
   assert.equal(mcpManifest.name, '@deepseek-ai/dsh-mcp-client')
   assert.equal(mcpManifest.version, certification.version, `mcp-client must match certified ${certification.label} version`)
 
-  const index = await readSource('packages/mcp/mcp-client/src/index.ts')
-  const transport = await readSource('packages/mcp/mcp-client/src/transport.ts')
-  const connection = await readSource('packages/mcp/mcp-client/src/connection.ts')
-  const tools = await readSource('packages/mcp/mcp-client/src/tools.ts')
+  const index = await readSource('packages/mcp/mcp-client/src/index.ts', commit)
+  const transport = await readSource('packages/mcp/mcp-client/src/transport.ts', commit)
+  const connection = await readSource('packages/mcp/mcp-client/src/connection.ts', commit)
+  const tools = await readSource('packages/mcp/mcp-client/src/tools.ts', commit)
 
   assertMarkers(index, [
     "export const inject = ['tools']",
@@ -176,4 +257,14 @@ test('official certified DSH source preserves the required mcp-client stdio and 
     'timeout: opts.toolCallTimeoutMs',
     'for (const dispose of previous.values()) dispose()',
   ], 'packages/mcp/mcp-client/src/tools.ts')
+  if (commit === DSH_015_ALPHA2_COMMIT) {
+    // This checks the reviewed diff's source markers, not pagination behavior.
+    assertMarkers(tools, [
+      'const seenCursors = new Set<string>()',
+      'cursor = response.nextCursor',
+      'if (seenCursors.has(cursor))',
+      'server repeated a tools/list continuation cursor',
+      'seenCursors.add(cursor)',
+    ], 'packages/mcp/mcp-client/src/tools.ts (alpha.2 cursor guard)')
+  }
 })

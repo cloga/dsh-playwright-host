@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5
+
+- Add exact source-seam certification for DSH Core `0.1.5-alpha.2` at commit `b2e3b2a0125854567a4a5fcba75782e42fe84901`, retaining all three earlier certified commit/version pairs (`0.1.2-rc.1`, `0.1.3-alpha.1`, and `0.1.5-alpha.1`).
+- Require all four exact sources in test and release workflow gates. Add optional read-only `DSH_CORE_REF` testing of certified Git objects in an existing repository without switching or creating Core worktrees.
+- The alpha.1 → alpha.2 MCP production source diff adds repeated non-empty `tools/list` continuation-cursor rejection in `syncTools`; it does not change the config/API consumed by this bundle. Check the new guard's source markers only for alpha.2; this is not a functional pagination test.
+- Preserve `cordis.patch.yml`, the Microsoft Playwright MCP pin at `@playwright/mcp@0.0.80`, all isolation flags, and the shared-process caveat. No live Host/browser/MCP verification is implied.
+- `0.1.3` and `0.1.4` are source certification history, not evidence of published releases. The latest published release at this change's preparation is `v0.1.2`; `v0.1.5` requires a separately authorized annotated tag and release.
+
 ## 0.1.4
 
 - Add exact source-seam certification for DSH Core `0.1.5-alpha.1` at commit `5dda764ed3aa172535a7967b06ff95d9cbfe536a`, retaining the `0.1.2-rc.1` and `0.1.3-alpha.1` certifications.
