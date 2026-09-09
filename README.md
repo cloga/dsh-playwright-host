@@ -6,10 +6,10 @@ This repository is a thin, reviewable composition bundle. Browser automation com
 
 ## Install without activation
 
-Use the immutable compatibility tag:
+After the release is published, use the immutable compatibility tag below. A certification PR or a version in source is not evidence that its tag and release artifact already exist:
 
 ```powershell
-dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.3
+dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.4
 ```
 
 An unpinned `github:cloga/dsh-playwright-host` install follows the moving default branch and is development-only, not reviewed deployment evidence.
@@ -26,13 +26,15 @@ The composed tree must contain one `mcp-playwright` row using `@deepseek-ai/dsh-
 
 ## Compatibility certification
 
-Version `0.1.3` retains source-seam certification against official DeepSeek Harness `0.1.2-rc.1` at immutable source commit `a66e4702047846cdaa10c66c9d3df3951f5ea70d` and adds DSH Core `0.1.3-alpha.1` at immutable source commit `d347e703908d0406b7a7ef80e3a0e594d86b2215`. The source-seam test accepts only those exact commit/version pairs. For each certified source, it checks that `@deepseek-ai/dsh-mcp-client` contains the stdio config and lifecycle source markers relied on by `cordis.patch.yml`, including startup readiness, fail-loud activation, effect-owned disposal, reconnect supervision, tool replacement, and per-call timeout markers. This marker certification is not a behavioral runtime test.
+Version `0.1.4` adds source-seam certification against official DSH Core [`0.1.5-alpha.1`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.1.5-alpha.1) at immutable source commit `5dda764ed3aa172535a7967b06ff95d9cbfe536a`. It retains DeepSeek Harness `0.1.2-rc.1` at commit `a66e4702047846cdaa10c66c9d3df3951f5ea70d` and DSH Core `0.1.3-alpha.1` at commit `d347e703908d0406b7a7ef80e3a0e594d86b2215`. The source-seam test accepts only those exact commit/version pairs. For each certified source, it checks that `@deepseek-ai/dsh-mcp-client` contains the stdio config and lifecycle source markers relied on by `cordis.patch.yml`, including startup readiness, fail-loud activation, effect-owned disposal, reconnect supervision, tool replacement, and per-call timeout markers. This marker certification is not a behavioral runtime test.
 
-The bundle runtime remains Windows-specific because it launches installed Microsoft Edge. Linux CI validates only the platform-neutral official DSH source seam; it does not claim Linux runtime support.
+The bundle runtime remains Windows-specific because it launches installed Microsoft Edge. Linux CI validates only the platform-neutral official DSH source seam; it does not claim Linux runtime support. Windows CI additionally checks the pinned MCP command's version, not full browser behavior inside a running target Core Host.
+
+Core `0.1.5-alpha.1` removes `ctx.agent`, makes Inbox a type-only interface, and upgrades session logs to V3. This composition-only bundle does not directly consume those APIs or read session logs. Its required MCP source markers remain present; no change to `cordis.patch.yml` or the MCP pin is needed for this source certification. An isolated MCP/Edge smoke test is separate evidence and does not prove Core Host startup, tool-registry disposal, or model-visible image admission. Full target Host activation remains a separate verification step, subject to the restart safety rule below.
 
 ## Requirements
 
-- DeepSeek Harness `0.1.2-rc.1` or DSH Core `0.1.3-alpha.1`, using the exact certified commits above; any other version must be separately verified to provide the same `@deepseek-ai/dsh-mcp-client` seams.
+- DSH Core `0.1.5-alpha.1`, DSH Core `0.1.3-alpha.1`, or DeepSeek Harness `0.1.2-rc.1`, using the exact certified commits above; any other version must be separately verified to provide the same `@deepseek-ai/dsh-mcp-client` seams.
 - Node.js and `npx` on the Host.
 - Microsoft Edge installed.
 - A DSH model route with image input plus Attachment support for model-visible screenshots; accessibility snapshots work without vision.
@@ -54,10 +56,14 @@ npm test
 npx -y @playwright/mcp@0.0.80 --version
 ```
 
-Run either official source-seam certification against an exact source checkout:
+Run all three official source-seam certifications against exact source checkouts:
 
 ```powershell
-# DSH Core 0.1.3-alpha.1 at d347e703908d0406b7a7ef80e3a0e594d86b2215
+# DSH Core 0.1.5-alpha.1 at 5dda764ed3aa172535a7967b06ff95d9cbfe536a
+$env:DSH_CORE_PATH = 'C:\path\to\deepseek-harness-0.1.5-alpha.1'
+npm test
+
+# Retained DSH Core 0.1.3-alpha.1 at d347e703908d0406b7a7ef80e3a0e594d86b2215
 $env:DSH_CORE_PATH = 'C:\path\to\deepseek-harness-0.1.3-alpha.1'
 npm test
 

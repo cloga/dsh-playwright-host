@@ -15,9 +15,11 @@ const releaseWorkflowUrl = new URL('./.github/workflows/release.yml', import.met
 const dshCorePath = process.env.DSH_CORE_PATH?.trim()
 const DSH_RC1_COMMIT = 'a66e4702047846cdaa10c66c9d3df3951f5ea70d'
 const DSH_ALPHA1_COMMIT = 'd347e703908d0406b7a7ef80e3a0e594d86b2215'
+const DSH_015_ALPHA1_COMMIT = '5dda764ed3aa172535a7967b06ff95d9cbfe536a'
 const CERTIFIED_DSH_SOURCES = new Map([
   [DSH_RC1_COMMIT, { version: '0.1.2-rc.1', label: 'rc.1' }],
-  [DSH_ALPHA1_COMMIT, { version: '0.1.3-alpha.1', label: 'alpha.1' }],
+  [DSH_ALPHA1_COMMIT, { version: '0.1.3-alpha.1', label: '0.1.3-alpha.1' }],
+  [DSH_015_ALPHA1_COMMIT, { version: '0.1.5-alpha.1', label: '0.1.5-alpha.1' }],
 ])
 
 function certifiedSource(commit) {
@@ -42,7 +44,7 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   const testWorkflow = (await readFile(testWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   const releaseWorkflow = (await readFile(releaseWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   assert.equal(manifest.name, 'dsh-playwright-host')
-  assert.equal(manifest.version, '0.1.3')
+  assert.equal(manifest.version, '0.1.4')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
   for (const marker of [
     'id: mcp-playwright',
@@ -72,7 +74,7 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
           - '1440x900'`), 'cordis.patch.yml must preserve the reviewed Playwright argument order')
   assert.match(readme, /Host scope/)
   assert.match(readme, /concurrent Sessions can affect the same browser state/)
-  assert.match(readme, /github:cloga\/dsh-playwright-host#v0\.1\.3/)
+  assert.match(readme, /github:cloga\/dsh-playwright-host#v0\.1\.4/)
   assert.match(readme, /development-only/)
   assert.match(readme, /Do not restart or replace a running DSH Host/)
   assert.match(readme, /exact interruption list/)
@@ -80,6 +82,11 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   assert.match(readme, new RegExp(DSH_RC1_COMMIT))
   assert.match(readme, /0\.1\.3-alpha\.1/)
   assert.match(readme, new RegExp(DSH_ALPHA1_COMMIT))
+  assert.match(readme, /0\.1\.5-alpha\.1/)
+  assert.match(readme, new RegExp(DSH_015_ALPHA1_COMMIT))
+  assert.match(changelog, /## 0\.1\.4/)
+  assert.match(changelog, /0\.1\.5-alpha\.1/)
+  assert.match(changelog, new RegExp(DSH_015_ALPHA1_COMMIT))
   assert.match(changelog, /## 0\.1\.3/)
   assert.match(changelog, /0\.1\.2/)
   assert.match(changelog, /0\.1\.3-alpha\.1/)
@@ -87,8 +94,10 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   for (const marker of [
     'version: 0.1.2-rc.1',
     'version: 0.1.3-alpha.1',
+    'version: 0.1.5-alpha.1',
     DSH_RC1_COMMIT,
     DSH_ALPHA1_COMMIT,
+    DSH_015_ALPHA1_COMMIT,
     'ref: ${{ matrix.dsh.commit }}',
     'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core',
   ]) assert.ok(testWorkflow.includes(marker), `test workflow omits ${marker}`)
@@ -96,6 +105,9 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     "tags:\n      - 'v*'",
     DSH_RC1_COMMIT,
     DSH_ALPHA1_COMMIT,
+    DSH_015_ALPHA1_COMMIT,
+    'path: dsh-core-015-alpha1',
+    'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-alpha1',
     'path: dsh-core-rc1',
     'path: dsh-core-alpha1',
     'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-rc1',
