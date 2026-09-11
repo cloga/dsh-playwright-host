@@ -22,12 +22,19 @@ const DSH_RC1_COMMIT = 'a66e4702047846cdaa10c66c9d3df3951f5ea70d'
 const DSH_ALPHA1_COMMIT = 'd347e703908d0406b7a7ef80e3a0e594d86b2215'
 const DSH_015_ALPHA1_COMMIT = '5dda764ed3aa172535a7967b06ff95d9cbfe536a'
 const DSH_015_ALPHA2_COMMIT = 'b2e3b2a0125854567a4a5fcba75782e42fe84901'
+const DSH_015_RC1_COMMIT = '183f08e9c6dde7e36cd2318eaee70b0da08fb35e'
+const DSH_015_RC2_COMMIT = 'fb2c4b9e698e30edb738bca4cf0618587db7d203'
 const CERTIFIED_DSH_SOURCES = new Map([
   [DSH_RC1_COMMIT, { version: '0.1.2-rc.1', label: 'rc.1' }],
   [DSH_ALPHA1_COMMIT, { version: '0.1.3-alpha.1', label: '0.1.3-alpha.1' }],
   [DSH_015_ALPHA1_COMMIT, { version: '0.1.5-alpha.1', label: '0.1.5-alpha.1' }],
   [DSH_015_ALPHA2_COMMIT, { version: '0.1.5-alpha.2', label: '0.1.5-alpha.2' }],
+  [DSH_015_RC1_COMMIT, { version: '0.1.5-rc.1', label: '0.1.5-rc.1' }],
+  [DSH_015_RC2_COMMIT, { version: '0.1.5-rc.2', label: '0.1.5-rc.2' }],
 ])
+// The repeated non-empty tools/list continuation-cursor guard landed in 0.1.5-alpha.2
+// and is unchanged in both 0.1.5-rc sources.
+const CURSOR_GUARD_SOURCES = new Set([DSH_015_ALPHA2_COMMIT, DSH_015_RC1_COMMIT, DSH_015_RC2_COMMIT])
 
 function certifiedSource(commit) {
   const certification = CERTIFIED_DSH_SOURCES.get(commit)
@@ -73,7 +80,7 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   const testWorkflow = (await readFile(testWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   const releaseWorkflow = (await readFile(releaseWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   assert.equal(manifest.name, 'dsh-playwright-host')
-  assert.equal(manifest.version, '0.1.5')
+  assert.equal(manifest.version, '0.1.6')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
   for (const marker of [
     'id: mcp-playwright',
@@ -103,7 +110,7 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
           - '1440x900'`), 'cordis.patch.yml must preserve the reviewed Playwright argument order')
   assert.match(readme, /Host scope/)
   assert.match(readme, /concurrent Sessions can affect the same browser state/)
-  assert.match(readme, /github:cloga\/dsh-playwright-host#v0\.1\.5/)
+  assert.match(readme, /github:cloga\/dsh-playwright-host#v0\.1\.6/)
   assert.match(readme, /development-only/)
   assert.match(readme, /Do not restart or replace a running DSH Host/)
   assert.match(readme, /exact interruption list/)
@@ -115,8 +122,17 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   assert.match(readme, new RegExp(DSH_015_ALPHA1_COMMIT))
   assert.match(readme, /0\.1\.5-alpha\.2/)
   assert.match(readme, new RegExp(DSH_015_ALPHA2_COMMIT))
+  assert.match(readme, /0\.1\.5-rc\.1/)
+  assert.match(readme, new RegExp(DSH_015_RC1_COMMIT))
+  assert.match(readme, /0\.1\.5-rc\.2/)
+  assert.match(readme, new RegExp(DSH_015_RC2_COMMIT))
   assert.match(readme, /DSH_CORE_REF/)
-  assert.match(readme, /latest published release.*v0\.1\.2/)
+  assert.match(readme, /latest published release.*v0\.1\.5/)
+  assert.match(changelog, /## 0\.1\.6/)
+  assert.match(changelog, /0\.1\.5-rc\.2/)
+  assert.match(changelog, new RegExp(DSH_015_RC2_COMMIT))
+  assert.match(changelog, /0\.1\.5-rc\.1/)
+  assert.match(changelog, new RegExp(DSH_015_RC1_COMMIT))
   assert.match(changelog, /## 0\.1\.5/)
   assert.match(changelog, /0\.1\.5-alpha\.2/)
   assert.match(changelog, new RegExp(DSH_015_ALPHA2_COMMIT))
@@ -136,10 +152,14 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     'version: 0.1.3-alpha.1',
     'version: 0.1.5-alpha.1',
     'version: 0.1.5-alpha.2',
+    'version: 0.1.5-rc.1',
+    'version: 0.1.5-rc.2',
     DSH_RC1_COMMIT,
     DSH_ALPHA1_COMMIT,
     DSH_015_ALPHA1_COMMIT,
     DSH_015_ALPHA2_COMMIT,
+    DSH_015_RC1_COMMIT,
+    DSH_015_RC2_COMMIT,
     'ref: ${{ matrix.dsh.commit }}',
     'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core',
   ]) assert.ok(testWorkflow.includes(marker), `test workflow omits ${marker}`)
@@ -149,10 +169,16 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     DSH_ALPHA1_COMMIT,
     DSH_015_ALPHA1_COMMIT,
     DSH_015_ALPHA2_COMMIT,
+    DSH_015_RC1_COMMIT,
+    DSH_015_RC2_COMMIT,
     'path: dsh-core-015-alpha2',
     'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-alpha2',
     'path: dsh-core-015-alpha1',
     'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-alpha1',
+    'path: dsh-core-015-rc1',
+    'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-rc1',
+    'path: dsh-core-015-rc2',
+    'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-rc2',
     'path: dsh-core-rc1',
     'path: dsh-core-alpha1',
     'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-rc1',
@@ -257,14 +283,14 @@ test('official certified DSH source preserves the required mcp-client stdio and 
     'timeout: opts.toolCallTimeoutMs',
     'for (const dispose of previous.values()) dispose()',
   ], 'packages/mcp/mcp-client/src/tools.ts')
-  if (commit === DSH_015_ALPHA2_COMMIT) {
-    // This checks the reviewed diff's source markers, not pagination behavior.
+  if (CURSOR_GUARD_SOURCES.has(commit)) {
+    // This checks the reviewed source markers, not pagination behavior.
     assertMarkers(tools, [
       'const seenCursors = new Set<string>()',
       'cursor = response.nextCursor',
       'if (seenCursors.has(cursor))',
       'server repeated a tools/list continuation cursor',
       'seenCursors.add(cursor)',
-    ], 'packages/mcp/mcp-client/src/tools.ts (alpha.2 cursor guard)')
+    ], `packages/mcp/mcp-client/src/tools.ts (${certification.label} cursor guard)`)
   }
 })
