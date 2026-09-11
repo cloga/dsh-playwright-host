@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.6
+
+- Add exact source-seam certification for DSH Core `0.1.5-rc.2` at commit `fb2c4b9e698e30edb738bca4cf0618587db7d203` and DSH Core `0.1.5-rc.1` at commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e`, retaining all four earlier certified commit/version pairs (`0.1.2-rc.1`, `0.1.3-alpha.1`, `0.1.5-alpha.1`, and `0.1.5-alpha.2`).
+- The `0.1.5-alpha.2` → `0.1.5-rc.1` → `0.1.5-rc.2` `@deepseek-ai/dsh-mcp-client` production source diff is empty: `src/index.ts`, `src/transport.ts`, `src/connection.ts`, and `src/tools.ts` are byte-identical across the three sources, and only the package version string changes. The config and lifecycle markers consumed by `cordis.patch.yml` are therefore unchanged, and the alpha.2 repeated-cursor guard marker check now applies to all three sources.
+- Require all six exact commit/version pairs in the test and release workflow gates.
+- Preserve `cordis.patch.yml`, the Microsoft Playwright MCP pin at `@playwright/mcp@0.0.80`, all isolation flags, and the shared-process caveat. No live Host/browser/MCP verification is implied.
+- `v0.1.5` is the latest published release; `v0.1.6` requires a separately authorized annotated tag and release.
+
 ## 0.1.5
 
 - Add exact source-seam certification for DSH Core `0.1.5-alpha.2` at commit `b2e3b2a0125854567a4a5fcba75782e42fe84901`, retaining all three earlier certified commit/version pairs (`0.1.2-rc.1`, `0.1.3-alpha.1`, and `0.1.5-alpha.1`).

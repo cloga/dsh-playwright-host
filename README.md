@@ -6,10 +6,10 @@ This repository is a thin, reviewable composition bundle. Browser automation com
 
 ## Install without activation
 
-The latest published release at preparation of this change is **`v0.1.2`**. Versions `0.1.3` and `0.1.4` record source certifications, not published artifacts. Version `0.1.5` is the next compatibility release; the command below is for use **only after its annotated tag and release artifact are published and verified**. A certification PR or a version in source is not publication evidence:
+The latest published release at preparation of this change is **`v0.1.5`**. Version `0.1.6` is the next compatibility release; the command below is for use **only after its annotated tag and release artifact are published and verified**. A certification PR or a version in source is not publication evidence:
 
 ```powershell
-dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.5
+dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.6
 ```
 
 An unpinned `github:cloga/dsh-playwright-host` install follows the moving default branch and is development-only, not reviewed deployment evidence.
@@ -26,10 +26,12 @@ The composed tree must contain one `mcp-playwright` row using `@deepseek-ai/dsh-
 
 ## Compatibility certification
 
-Version `0.1.5` adds source-seam certification against official DSH Core [`0.1.5-alpha.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.1.5-alpha.2) at immutable source commit `b2e3b2a0125854567a4a5fcba75782e42fe84901`. It preserves every previously certified source:
+Version `0.1.6` adds source-seam certification against official DSH Core [`0.1.5-rc.2`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.1.5-rc.2) at immutable source commit `fb2c4b9e698e30edb738bca4cf0618587db7d203` and [`0.1.5-rc.1`](https://github.com/deepseek-ai/deepseek-harness/releases/tag/dsh-v0.1.5-rc.1) at immutable source commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e`. It preserves every previously certified source:
 
 | Core version | Exact certified source commit |
 | --- | --- |
+| `0.1.5-rc.2` | `fb2c4b9e698e30edb738bca4cf0618587db7d203` |
+| `0.1.5-rc.1` | `183f08e9c6dde7e36cd2318eaee70b0da08fb35e` |
 | `0.1.5-alpha.2` | `b2e3b2a0125854567a4a5fcba75782e42fe84901` |
 | `0.1.5-alpha.1` | `5dda764ed3aa172535a7967b06ff95d9cbfe536a` |
 | `0.1.3-alpha.1` | `d347e703908d0406b7a7ef80e3a0e594d86b2215` |
@@ -41,11 +43,13 @@ The bundle runtime remains Windows-specific because it launches installed Micros
 
 The actual Core `0.1.5-alpha.1` → `0.1.5-alpha.2` MCP production source diff only adds repeated non-empty `tools/list` continuation-cursor rejection in `syncTools`, before the previous tool generation is replaced. The MCP config/API consumed here is unchanged; related upstream docs, tests, and package versions also change. The alpha.2 source test checks the cursor-guard markers, not the guard's functional behavior, retention of callable tools, or later recovery. No change to `cordis.patch.yml`, isolation flags, or the MCP pin is needed.
 
+The `0.1.5-alpha.2` → `0.1.5-rc.1` → `0.1.5-rc.2` MCP production source diff is empty: `src/index.ts`, `src/transport.ts`, `src/connection.ts`, and `src/tools.ts` are byte-identical across the three sources, and only `packages/mcp/mcp-client/package.json` changes its version string. The same cursor-guard marker check therefore also applies to the two rc sources; it remains a marker check, not a functional pagination test.
+
 Core `0.1.5-alpha.1` had removed `ctx.agent`, made Inbox a type-only interface, and upgraded session logs to V3; this composition-only bundle does not directly consume those APIs or read session logs. An isolated MCP/Edge smoke test is separate evidence and does not prove Core Host startup, tool-registry disposal, or model-visible image admission. Full target Host activation remains a separate verification step, subject to the restart safety rule above.
 
 ## Requirements
 
-- DSH Core `0.1.5-alpha.2`, DSH Core `0.1.5-alpha.1`, DSH Core `0.1.3-alpha.1`, or DeepSeek Harness `0.1.2-rc.1`, using the exact certified commits above; any other version must be separately verified to provide the same `@deepseek-ai/dsh-mcp-client` seams.
+- DSH Core `0.1.5-rc.2`, DSH Core `0.1.5-rc.1`, DSH Core `0.1.5-alpha.2`, DSH Core `0.1.5-alpha.1`, DSH Core `0.1.3-alpha.1`, or DeepSeek Harness `0.1.2-rc.1`, using the exact certified commits above; any other version must be separately verified to provide the same `@deepseek-ai/dsh-mcp-client` seams.
 - Node.js and `npx` on the Host.
 - Microsoft Edge installed.
 - A DSH model route with image input plus Attachment support for model-visible screenshots; accessibility snapshots work without vision.
@@ -68,12 +72,14 @@ node --check test.mjs
 npm test
 ```
 
-Run all four official source-seam certifications from an **existing** Git repository containing the exact objects, without changing its checkout:
+Run all six official source-seam certifications from an **existing** Git repository containing the exact objects, without changing its checkout:
 
 ```powershell
 $env:DSH_CORE_PATH = 'C:\path\to\deepseek-harness'
 try {
   foreach ($commit in @(
+    'fb2c4b9e698e30edb738bca4cf0618587db7d203', # 0.1.5-rc.2
+    '183f08e9c6dde7e36cd2318eaee70b0da08fb35e', # 0.1.5-rc.1
     'b2e3b2a0125854567a4a5fcba75782e42fe84901', # 0.1.5-alpha.2
     '5dda764ed3aa172535a7967b06ff95d9cbfe536a', # 0.1.5-alpha.1
     'd347e703908d0406b7a7ef80e3a0e594d86b2215', # 0.1.3-alpha.1
@@ -96,7 +102,7 @@ Separately, when package execution/download is authorized, Windows CI runs `npx 
 
 ## Release mechanics and evidence limits
 
-`.github/workflows/test.yml` runs all four exact Core refs on Windows and Linux. `.github/workflows/release.yml` runs on a pushed `v*` tag, requires an **annotated** tag matching `package.json` (`v0.1.5` for this source), checks out and certifies all four exact Core refs, runs `npm pack`, writes and verifies `SHA256SUMS`, and uses `gh release create --verify-tag` to attach the tarball and checksum manifest. A merge to `main` alone does not publish anything; this private composition package is distributed by GitHub Release, not an npm publish step.
+`.github/workflows/test.yml` runs all six exact Core refs on Windows and Linux. `.github/workflows/release.yml` runs on a pushed `v*` tag, requires an **annotated** tag matching `package.json` (`v0.1.6` for this source), checks out and certifies all six exact Core refs, runs `npm pack`, writes and verifies `SHA256SUMS`, and uses `gh release create --verify-tag` to attach the tarball and checksum manifest. A merge to `main` alone does not publish anything; this private composition package is distributed by GitHub Release, not an npm publish step.
 
 The workflow's "immutable" step name does not enforce repository-level release immutability. Verify that setting and the resulting release's immutable status, exact annotated tag/commit, tarball, and checksums separately before deployment. Static/local source tests do not prove hosted CI passed, a release exists, functional cursor rejection/recovery, target Core Host activation/disposal, browser isolation across Sessions, or model-visible screenshots. Do not call live user browser/MCP tools or restart the Host merely to establish source certification.
 
