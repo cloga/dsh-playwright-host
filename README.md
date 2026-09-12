@@ -6,7 +6,7 @@ This repository is a thin, reviewable composition bundle. Browser automation com
 
 ## Install without activation
 
-The latest published release at preparation of this change is **`v0.1.5`**. Version `0.1.6` is the next compatibility release; the command below is for use **only after its annotated tag and release artifact are published and verified**. A certification PR or a version in source is not publication evidence:
+The latest published release at preparation of this change is **`v0.1.5`**; version `0.1.6` is the next compatibility release and **publishes automatically when this change merges**, because a `main` merge whose declared version has no tag yet runs the full certification gate and creates the annotated tag and Release itself. The command below is for use **only after that Release and its checksum manifest exist and verify**:
 
 ```powershell
 dsh plugin --profile web add github:cloga/dsh-playwright-host#v0.1.6
@@ -102,9 +102,9 @@ Separately, when package execution/download is authorized, Windows CI runs `npx 
 
 ## Release mechanics and evidence limits
 
-`.github/workflows/test.yml` runs all six exact Core refs on Windows and Linux. `.github/workflows/release.yml` runs on a pushed `v*` tag, requires an **annotated** tag matching `package.json` (`v0.1.6` for this source), checks out and certifies all six exact Core refs, runs `npm pack`, writes and verifies `SHA256SUMS`, and uses `gh release create --verify-tag` to attach the tarball and checksum manifest. A merge to `main` alone does not publish anything; this private composition package is distributed by GitHub Release, not an npm publish step.
+`.github/workflows/test.yml` runs all six exact Core refs on Windows and Linux and then gates `release-ready` on that whole matrix. On a `main` push, `release-ready` invokes the reusable `.github/workflows/release.yml`: its `plan` job reads `package.json` and, when `v<version>` has no tag yet, the `release` job checks out and certifies all six exact Core refs, runs `npm pack`, writes and verifies `SHA256SUMS`, creates the **annotated** tag on that verified revision, and uses `gh release create --verify-tag` to attach the tarball and checksum manifest. A version that is already tagged publishes nothing, so merges that do not bump the version stay release-free and each version publishes exactly once. This private composition package is distributed by GitHub Release, not an npm publish step.
 
-The workflow's "immutable" step name does not enforce repository-level release immutability. Verify that setting and the resulting release's immutable status, exact annotated tag/commit, tarball, and checksums separately before deployment. Static/local source tests do not prove hosted CI passed, a release exists, functional cursor rejection/recovery, target Core Host activation/disposal, browser isolation across Sessions, or model-visible screenshots. Do not call live user browser/MCP tools or restart the Host merely to establish source certification.
+The tag is created with `GITHUB_TOKEN`, which by design starts no further workflow run. A run that fails after the tag exists leaves that tag without a Release: `plan` then emits a warning instead of publishing, and that tag must be deleted before the version can be published again. The workflow never enforces repository-level release immutability: verify that setting and the resulting Release's immutable status, exact annotated tag/commit, tarball, and checksums separately before deployment. Static/local source tests do not prove hosted CI passed, a release exists, functional cursor rejection/recovery, target Core Host activation/disposal, browser isolation across Sessions, or model-visible screenshots. Do not call live user browser/MCP tools or restart the Host merely to establish source certification.
 
 ## Remove
 
