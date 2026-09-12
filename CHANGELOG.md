@@ -6,7 +6,7 @@
 - The `0.1.5-alpha.2` → `0.1.5-rc.1` → `0.1.5-rc.2` `@deepseek-ai/dsh-mcp-client` production source diff is empty: `src/index.ts`, `src/transport.ts`, `src/connection.ts`, and `src/tools.ts` are byte-identical across the three sources, and only the package version string changes. The config and lifecycle markers consumed by `cordis.patch.yml` are therefore unchanged, and the alpha.2 repeated-cursor guard marker check now applies to all three sources.
 - Require all six exact commit/version pairs in the test and release workflow gates.
 - Preserve `cordis.patch.yml`, the Microsoft Playwright MCP pin at `@playwright/mcp@0.0.80`, all isolation flags, and the shared-process caveat. No live Host/browser/MCP verification is implied.
-- `v0.1.5` is the latest published release; `v0.1.6` requires a separately authorized annotated tag and release.
+- Publishing follows the declared version: a `main` merge whose `package.json` version has no tag yet runs the full certification gate, creates the annotated tag on that verified revision, and publishes the Release itself, while an already-tagged version publishes nothing. Manual tag pushes no longer start a release.
 
 ## 0.1.5
 

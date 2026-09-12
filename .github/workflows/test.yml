@@ -49,3 +49,24 @@ jobs:
       - name: Verify pinned Playwright MCP command on Windows
         if: runner.os == 'Windows'
         run: npx -y @playwright/mcp@0.0.80 --version
+
+  release-ready:
+    name: release-ready
+    needs: [certify]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require the full certification matrix
+        shell: bash
+        env:
+          CERTIFY_RESULT: ${{ needs.certify.result }}
+        run: test "$CERTIFY_RESULT" = success
+
+  release:
+    name: release
+    needs: [release-ready]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release-ready.result == 'success' }}
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
