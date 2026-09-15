@@ -58,7 +58,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
         with:
@@ -100,6 +100,12 @@ jobs:
           ref: fb2c4b9e698e30edb738bca4cf0618587db7d203
           path: dsh-core-015-rc2
           persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: deepseek-ai/deepseek-harness
+          ref: 0a15e36e7f82b6ed45af6fa9759f29b40dcd965d
+          path: dsh-core-016-alpha1
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -135,6 +141,17 @@ jobs:
         run: npm test
         env:
           DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-015-rc2
+      - name: Verify exact 0.1.6-alpha.1 source seam
+        run: npm test
+        env:
+          DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-016-alpha1
+      - name: Verify DSH 0.1.6 MCP v2 behavior
+        shell: bash
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh...'
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run packages/mcp/mcp-client/tests/apply.spec.ts packages/mcp/mcp-client/tests/protocol.spec.ts packages/mcp/mcp-client/tests/negotiation-lifecycle.spec.ts packages/mcp/mcp-client/tests/reconnect.spec.ts packages/mcp/mcp-client/tests/server-context.spec.ts packages/mcp/mcp-client/tests/tool-definition.spec.ts packages/mcp/mcp-resources/tests/resources.spec.ts apps/cli/tests/profile-mcp.spec.ts
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
       - run: mkdir artifacts
       - run: npm pack --pack-destination artifacts
       - name: Write and verify SHA-256 manifest
