@@ -197,7 +197,9 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     'resources.spec.ts',
     'pnpm@11.7.0',
     '--ignore-scripts',
-    'build:lib:host',
+    'packages/typert/generator/tsconfig.json',
+    "tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm'",
+    'packages/subagent/subagent/lib/typert.host.js',
     'uses: ./.github/workflows/release.yml',
     "if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release-ready.result == 'success' }}",
   ]) assert.ok(testWorkflow.includes(marker), `test workflow omits ${marker}`)

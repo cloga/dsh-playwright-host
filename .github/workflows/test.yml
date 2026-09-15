@@ -72,9 +72,23 @@ jobs:
         shell: pwsh
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh...'
-      - name: Build the exact upstream Host library outputs
+      - name: Build the exact upstream headless Typert contributors
         shell: pwsh
-        run: npx --yes pnpm@11.7.0 --dir dsh-core-contract run build:lib:host
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
+          foreach ($path in @(
+            'packages/llm/llm/lib/typert.host.js',
+            'packages/interaction/permission-presets/lib/typert.host.js',
+            'packages/interaction/commands/lib/typert.host.js',
+            'packages/feedback/command-feedback/lib/typert.host.js',
+            'packages/goal/goal/lib/typert.host.js',
+            'packages/subagent/subagent/lib/typert.host.js'
+          )) {
+            if (!(Test-Path (Join-Path 'dsh-core-contract' $path))) {
+              throw "Missing required Typert contributor: $path"
+            }
+          }
       - name: Verify MCP SDK v2 initialization, tools, resources, cancellation, recovery, and cleanup
         shell: pwsh
         run: |

@@ -149,7 +149,18 @@ jobs:
         shell: bash
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh...'
-          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 run build:lib:host
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
+          for path in \
+            packages/llm/llm/lib/typert.host.js \
+            packages/interaction/permission-presets/lib/typert.host.js \
+            packages/interaction/commands/lib/typert.host.js \
+            packages/feedback/command-feedback/lib/typert.host.js \
+            packages/goal/goal/lib/typert.host.js \
+            packages/subagent/subagent/lib/typert.host.js
+          do
+            test -f "dsh-core-016-alpha1/$path"
+          done
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run packages/mcp/mcp-client/tests/apply.spec.ts packages/mcp/mcp-client/tests/protocol.spec.ts packages/mcp/mcp-client/tests/negotiation-lifecycle.spec.ts packages/mcp/mcp-client/tests/reconnect.spec.ts packages/mcp/mcp-client/tests/server-context.spec.ts packages/mcp/mcp-client/tests/tool-definition.spec.ts packages/mcp/mcp-resources/tests/resources.spec.ts apps/cli/tests/profile-mcp.spec.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
