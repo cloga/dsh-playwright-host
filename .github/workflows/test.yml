@@ -71,7 +71,7 @@ jobs:
       - name: Install the exact upstream MCP and CLI test closure
         shell: pwsh
         run: |
-          npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh-session-snapshot...' --filter '@deepseek-ai/dsh...'
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh...'
       - name: Build the exact upstream headless Typert contributors
         shell: pwsh
         run: |
@@ -96,13 +96,34 @@ jobs:
       - name: Verify SDK pagination failure is isolated from the headless Host route
         shell: pwsh
         run: npx --yes pnpm@11.7.0 --dir dsh-core-contract exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
+  resource-snapshot:
+    name: DSH 0.1.6 MCP resource snapshot (Ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: deepseek-ai/deepseek-harness
+          ref: 0a15e36e7f82b6ed45af6fa9759f29b40dcd965d
+          path: dsh-core-resources
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install the exact upstream resource snapshot closure
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-resources install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh-session-snapshot...' --filter '@deepseek-ai/dsh...'
+      - name: Build the exact upstream headless Typert contributors
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
       - name: Verify resource discovery, reads, URI templates, and native/PTC projections
-        shell: pwsh
-        run: npx --yes pnpm@11.7.0 --dir dsh-core-contract exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-resources exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
 
   release-ready:
     name: release-ready
-    needs: [certify, contract]
+    needs: [certify, contract, resource-snapshot]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -112,9 +133,11 @@ jobs:
         env:
           CERTIFY_RESULT: ${{ needs.certify.result }}
           CONTRACT_RESULT: ${{ needs.contract.result }}
+          RESOURCE_SNAPSHOT_RESULT: ${{ needs.resource-snapshot.result }}
         run: |
           test "$CERTIFY_RESULT" = success
           test "$CONTRACT_RESULT" = success
+          test "$RESOURCE_SNAPSHOT_RESULT" = success
 
   release:
     name: release
