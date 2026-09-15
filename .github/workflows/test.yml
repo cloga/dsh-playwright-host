@@ -116,6 +116,7 @@ jobs:
         run: npx --yes pnpm@11.7.0 --dir dsh-core-resources install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh-session-snapshot...' --filter '@deepseek-ai/dsh...'
       - name: Build the exact upstream headless Typert contributors
         run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:native-system
           npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
           npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
       - name: Verify resource discovery, reads, URI templates, and native/PTC projections
