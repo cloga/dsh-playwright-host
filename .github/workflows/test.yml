@@ -71,7 +71,7 @@ jobs:
       - name: Install the exact upstream MCP and CLI test closure
         shell: pwsh
         run: |
-          npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh...'
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh...'
       - name: Build the exact upstream headless Typert contributors
         shell: pwsh
         run: |

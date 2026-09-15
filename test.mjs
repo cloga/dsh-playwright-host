@@ -197,6 +197,7 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     'resources.spec.ts',
     'pnpm@11.7.0',
     '--ignore-scripts',
+    "--filter '@deepseek-ai/dsh-typert-generator...'",
     'packages/typert/generator/tsconfig.json',
     "tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm'",
     'packages/subagent/subagent/lib/typert.host.js',
