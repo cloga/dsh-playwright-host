@@ -149,6 +149,7 @@ jobs:
         shell: bash
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh...'
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 run build:lib:host
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run packages/mcp/mcp-client/tests/apply.spec.ts packages/mcp/mcp-client/tests/protocol.spec.ts packages/mcp/mcp-client/tests/negotiation-lifecycle.spec.ts packages/mcp/mcp-client/tests/reconnect.spec.ts packages/mcp/mcp-client/tests/server-context.spec.ts packages/mcp/mcp-client/tests/tool-definition.spec.ts packages/mcp/mcp-resources/tests/resources.spec.ts apps/cli/tests/profile-mcp.spec.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'

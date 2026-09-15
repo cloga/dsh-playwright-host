@@ -72,6 +72,9 @@ jobs:
         shell: pwsh
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh...'
+      - name: Build the exact upstream Host library outputs
+        shell: pwsh
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-contract run build:lib:host
       - name: Verify MCP SDK v2 initialization, tools, resources, cancellation, recovery, and cleanup
         shell: pwsh
         run: |
