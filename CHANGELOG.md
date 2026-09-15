@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.7
+
+- Add exact source and tree certification for upstream DSH `0.1.6-alpha.1` at commit `0a15e36e7f82b6ed45af6fa9759f29b40dcd965d` and tree `66c4c9c2053c6fcf91ad4e47d85bd77539c0b101`, while retaining all six earlier certified commit/version pairs.
+- Require the DSH 0.1.6 MCP SDK v2 contract: automatic protocol negotiation, capability-aware no-tools startup, SDK-owned tool pagination and list-change subscriptions, caller cancellation, resource discovery/read/template cursors, literal server instructions, and canonical native/PTC results.
+- Add real upstream behavior gates for initialization, strict startup failure, optional Host-route isolation after pagination failure, reconnect recovery, resource/provider and PTC cleanup, probe/child-process quiescence, resource URI templates, and native/PTC resource projection. Build only the six exact headless Typert contributors and their recursive TypeScript references before loader-based tests. Run focused MCP behavior on Windows and prepare the exact native system host addon before the canonical Linux-owned resource snapshot on Ubuntu, so unrelated bash/system-prompt text is never normalized or compared against the wrong platform.
+- Pin compatible `@deepseek-ai/dsh-mcp-client`, `@deepseek-ai/dsh-mcp-resources`, and `@deepseek-ai/dsh-system-prompt` peers to the reviewed `0.1.6` line. Explicitly configure the reviewed instruction budget and reconnect policy in `cordis.patch.yml`.
+- Preserve Microsoft Playwright MCP `@playwright/mcp@0.0.80`, isolated installed Edge, Host-wide shared-process boundaries, and the immutable merge-gated Release workflow. cloga/deepseek-harness#33 has merged with green CI, and the `0.1.5` Desktop Release is accepted immutable with its remote managed Check passing. Windows Ops must repin that release and cloga/dsh-windows-ops#161 must explicitly clear this bundle before merge/release.
+
 ## 0.1.6
 
 - Add exact source-seam certification for DSH Core `0.1.5-rc.2` at commit `fb2c4b9e698e30edb738bca4cf0618587db7d203` and DSH Core `0.1.5-rc.1` at commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e`, retaining all four earlier certified commit/version pairs (`0.1.2-rc.1`, `0.1.3-alpha.1`, `0.1.5-alpha.1`, and `0.1.5-alpha.2`).
