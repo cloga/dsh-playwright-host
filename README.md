@@ -121,6 +121,15 @@ Windows job performs the real Edge comparison; missing browser requirements fail
 not skip. The release caller requires every job. Linux source tests alone do not
 establish Windows browser acceptance; MCP `--version` is only executable evidence.
 
+Alpha.2 headless process tests need the **built Host package exports**, not only
+selected Typert contributors: its runtime dependency resolver no longer obtains
+all dynamically loaded profile packages from the source aliases used by alpha.1.
+CI installs the exact frozen workspace with lifecycle scripts disabled, then runs
+the official `build:lib:host` script without modifying upstream source, and uses
+`DSH_EXAMPLE_MODE=lib` like the official recorded-process gates. Linux
+persisted-resume and snapshot tests also run `build:native-system` for file locking.
+Native PowerShell commands fail immediately before subsequent build/file checks.
+
 ## Isolation, management and migration limits
 
 `--isolated` protects the everyday browser profile, not concurrent DSH Sessions.

@@ -182,6 +182,8 @@ jobs:
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
       - name: Verify exact alpha2 MCP, Browser Use and resource behavior before packing
+        env:
+          DSH_EXAMPLE_MODE: lib
         shell: bash
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 install --frozen-lockfile --ignore-scripts

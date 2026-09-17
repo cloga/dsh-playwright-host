@@ -122,6 +122,8 @@ jobs:
           npx --yes pnpm@11.7.0 --dir dsh-core-contract exec vitest run packages/mcp/mcp-client/tests/apply.spec.ts packages/mcp/mcp-client/tests/protocol.spec.ts packages/mcp/mcp-client/tests/negotiation-lifecycle.spec.ts packages/mcp/mcp-client/tests/reconnect.spec.ts packages/mcp/mcp-client/tests/server-context.spec.ts packages/mcp/mcp-client/tests/tool-definition.spec.ts packages/mcp/mcp-resources/tests/resources.spec.ts apps/cli/tests/profile-mcp.spec.ts
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify SDK pagination failure is isolated from the headless Host route
+        env:
+          DSH_EXAMPLE_MODE: ${{ matrix.dsh.version == '0.1.6-alpha.2' && 'lib' || 'src' }}
         shell: pwsh
         run: npx --yes pnpm@11.7.0 --dir dsh-core-contract exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
   resource-snapshot:
@@ -166,6 +168,8 @@ jobs:
           npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
           npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
       - name: Verify resource discovery, reads, URI templates, and native/PTC projections
+        env:
+          DSH_EXAMPLE_MODE: ${{ matrix.dsh.version == '0.1.6-alpha.2' && 'lib' || 'src' }}
         run: npx --yes pnpm@11.7.0 --dir dsh-core-resources exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
 
   official-browser-contract:
