@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.8
+
+- Add exact official DSH `0.1.6-alpha.2` source/tree certification: `ddefc45fbc7f8e46dd73185e68295696d1297887` / `5aca5ee6f8dfd110dc3ae199fbddf8a0f606625f`, retaining all seven previous source qualifications.
+- Perform official-first Browser Use review. Prefer official exact-Agent ownership as the migration foundation; retain the unchanged thin shared-MCP composition temporarily because the official provider does not expose testing/devtools/vision caps or fixed viewport options. Real isolated Edge/MCP comparison verifies testing/coordinate-tool and viewport differences without claiming live DSH or multi-Session acceptance.
+- Extend Windows/Linux source qualification and both 0.1.6 behavior/resource matrices, add official Browser Use lifecycle/provider tests and a required Windows real Edge smoke. No Core implementation, live profile or browser-account data is modified.
+- Replace stale v0.1.7 publication holds and unsafe failed-tag deletion guidance. Serialize release publication, upload drafts first, verify downloaded release bytes before publishing, require immutable metadata, and fail closed on interrupted pre-existing tags instead of silently skipping or rewriting history.
+
 ## 0.1.7
 
 - Add exact source and tree certification for upstream DSH `0.1.6-alpha.1` at commit `0a15e36e7f82b6ed45af6fa9759f29b40dcd965d` and tree `66c4c9c2053c6fcf91ad4e47d85bd77539c0b101`, while retaining all six earlier certified commit/version pairs.

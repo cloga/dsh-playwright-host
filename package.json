@@ -1,6 +1,6 @@
 {
   "name": "dsh-playwright-host",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Host-scope Microsoft Playwright MCP bundle for DeepSeek Harness on Windows.",
   "private": true,
   "type": "module",
@@ -10,7 +10,8 @@
     "url": "https://github.com/cloga/dsh-playwright-host.git"
   },
   "scripts": {
-    "test": "node --test test.mjs"
+    "test": "node --test test.mjs official-first.test.mjs",
+    "test:browser": "node --test browser.test.mjs"
   },
   "dsh": {
     "bundle": {
@@ -26,6 +27,7 @@
     "cordis.patch.yml",
     "README.md",
     "CHANGELOG.md",
+    "docs/official-first-016-alpha2.md",
     "LICENSE"
   ]
 }

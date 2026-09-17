@@ -31,6 +31,8 @@ jobs:
             commit: fb2c4b9e698e30edb738bca4cf0618587db7d203
           - version: 0.1.6-alpha.1
             commit: 0a15e36e7f82b6ed45af6fa9759f29b40dcd965d
+          - version: 0.1.6-alpha.2
+            commit: ddefc45fbc7f8e46dd73185e68295696d1297887
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
@@ -53,7 +55,15 @@ jobs:
         run: npx -y @playwright/mcp@0.0.80 --version
 
   contract:
-    name: DSH 0.1.6 MCP v2 contract (Windows)
+    name: DSH 0.1.6 MCP v2 contract (Windows, ${{ matrix.dsh.version }})
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh:
+          - version: 0.1.6-alpha.1
+            commit: 0a15e36e7f82b6ed45af6fa9759f29b40dcd965d
+          - version: 0.1.6-alpha.2
+            commit: ddefc45fbc7f8e46dd73185e68295696d1297887
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -61,22 +71,42 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: deepseek-ai/deepseek-harness
-          ref: 0a15e36e7f82b6ed45af6fa9759f29b40dcd965d
+          ref: ${{ matrix.dsh.commit }}
           path: dsh-core-contract
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           package-manager-cache: false
+      - name: Install the exact alpha2 workspace for runtime package resolution
+        if: matrix.dsh.version == '0.1.6-alpha.2'
+        shell: pwsh
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build all exact alpha2 Host package exports
+        if: matrix.dsh.version == '0.1.6-alpha.2'
+        shell: pwsh
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract run build:lib:host
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # The official Client pass also emits Node loaders (Typert registry/API gateway).
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract run build:lib:client
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install the exact upstream MCP and CLI test closure
+        if: matrix.dsh.version == '0.1.6-alpha.1'
         shell: pwsh
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh...'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build the exact upstream headless Typert contributors
+        if: matrix.dsh.version == '0.1.6-alpha.1'
         shell: pwsh
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npx --yes pnpm@11.7.0 --dir dsh-core-contract exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           foreach ($path in @(
             'packages/llm/llm/lib/typert.host.js',
             'packages/interaction/permission-presets/lib/typert.host.js',
@@ -93,11 +123,22 @@ jobs:
         shell: pwsh
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract exec vitest run packages/mcp/mcp-client/tests/apply.spec.ts packages/mcp/mcp-client/tests/protocol.spec.ts packages/mcp/mcp-client/tests/negotiation-lifecycle.spec.ts packages/mcp/mcp-client/tests/reconnect.spec.ts packages/mcp/mcp-client/tests/server-context.spec.ts packages/mcp/mcp-client/tests/tool-definition.spec.ts packages/mcp/mcp-resources/tests/resources.spec.ts apps/cli/tests/profile-mcp.spec.ts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify SDK pagination failure is isolated from the headless Host route
+        env:
+          DSH_EXAMPLE_MODE: ${{ matrix.dsh.version == '0.1.6-alpha.2' && 'lib' || 'src' }}
         shell: pwsh
         run: npx --yes pnpm@11.7.0 --dir dsh-core-contract exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
   resource-snapshot:
-    name: DSH 0.1.6 MCP resource snapshot (Ubuntu)
+    name: DSH 0.1.6 MCP resource snapshot (Ubuntu) ${{ matrix.dsh.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        dsh:
+          - version: 0.1.6-alpha.1
+            commit: 0a15e36e7f82b6ed45af6fa9759f29b40dcd965d
+          - version: 0.1.6-alpha.2
+            commit: ddefc45fbc7f8e46dd73185e68295696d1297887
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -105,26 +146,93 @@ jobs:
       - uses: actions/checkout@v6
         with:
           repository: deepseek-ai/deepseek-harness
-          ref: 0a15e36e7f82b6ed45af6fa9759f29b40dcd965d
+          ref: ${{ matrix.dsh.commit }}
           path: dsh-core-resources
           persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           package-manager-cache: false
+      - name: Install the exact alpha2 workspace for runtime package resolution
+        if: matrix.dsh.version == '0.1.6-alpha.2'
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-resources install --frozen-lockfile --ignore-scripts
+      - name: Build all exact alpha2 Host package exports and native locking
+        if: matrix.dsh.version == '0.1.6-alpha.2'
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:native-system
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:lib:host
+          # Client pass owns some Node loader entries; do not omit it for headless tests.
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:lib:client
       - name: Install the exact upstream resource snapshot closure
+        if: matrix.dsh.version == '0.1.6-alpha.1'
         run: npx --yes pnpm@11.7.0 --dir dsh-core-resources install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh-session-snapshot...' --filter '@deepseek-ai/dsh...'
       - name: Build the exact upstream headless Typert contributors
+        if: matrix.dsh.version == '0.1.6-alpha.1'
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:native-system
           npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
           npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
       - name: Verify resource discovery, reads, URI templates, and native/PTC projections
+        env:
+          DSH_EXAMPLE_MODE: ${{ matrix.dsh.version == '0.1.6-alpha.2' && 'lib' || 'src' }}
         run: npx --yes pnpm@11.7.0 --dir dsh-core-resources exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
+
+  official-browser-contract:
+    name: Official alpha2 Browser Use contracts (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+        with:
+          repository: deepseek-ai/deepseek-harness
+          ref: ddefc45fbc7f8e46dd73185e68295696d1297887
+          path: dsh-core-browser
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install exact official Browser Use test closure
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-browser install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp...' --filter '@deepseek-ai/dsh-experimental-browser-use-runtime...' --filter '@deepseek-ai/dsh-browser-use...'
+      - name: Build native locking for persisted resume on Linux
+        if: runner.os == 'Linux'
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-browser run build:native-system
+      - name: Verify official provider, Agent isolation, cancellation and teardown
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-browser exec vitest run packages/experimental/browser-use-playwright-mcp/tests/provider.spec.ts packages/experimental/browser-use-runtime/tests/mcp.spec.ts packages/experimental/browser-use-runtime/tests/resources.spec.ts packages/experimental/browser-use-runtime/tests/agent-disposal.spec.ts packages/browser-use/browser-use/tests/registry.spec.ts
+
+  browser:
+    name: Pinned MCP real Edge capability parity (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install pinned MCP into isolated runner scratch
+        shell: pwsh
+        run: |
+          npm install --prefix "$env:RUNNER_TEMP/playwright-smoke" --ignore-scripts --no-audit --no-fund @playwright/mcp@0.0.80
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify retained caps and official defaults with real isolated Edge
+        shell: pwsh
+        run: |
+          $env:PLAYWRIGHT_MCP_CLI = "$env:RUNNER_TEMP/playwright-smoke/node_modules/@playwright/mcp/cli.js"
+          $env:DSH_BROWSER_EXECUTABLE = "${env:ProgramFiles(x86)}/Microsoft/Edge/Application/msedge.exe"
+          if (!(Test-Path $env:DSH_BROWSER_EXECUTABLE)) { throw 'Installed Edge is required for browser qualification' }
+          $env:REQUIRE_BROWSER_TEST = '1'
+          npm run test:browser
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   release-ready:
     name: release-ready
-    needs: [certify, contract, resource-snapshot]
+    needs: [certify, contract, resource-snapshot, official-browser-contract, browser]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -135,10 +243,14 @@ jobs:
           CERTIFY_RESULT: ${{ needs.certify.result }}
           CONTRACT_RESULT: ${{ needs.contract.result }}
           RESOURCE_SNAPSHOT_RESULT: ${{ needs.resource-snapshot.result }}
+          OFFICIAL_BROWSER_RESULT: ${{ needs.official-browser-contract.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
         run: |
           test "$CERTIFY_RESULT" = success
           test "$CONTRACT_RESULT" = success
           test "$RESOURCE_SNAPSHOT_RESULT" = success
+          test "$OFFICIAL_BROWSER_RESULT" = success
+          test "$BROWSER_RESULT" = success
 
   release:
     name: release

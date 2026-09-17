@@ -13,6 +13,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: dsh-playwright-host-release
+  cancel-in-progress: false
+
 jobs:
   plan:
     name: plan
@@ -41,8 +45,10 @@ jobs:
           if git rev-parse --verify --quiet "refs/tags/$tag" > /dev/null; then
             echo "release=false" >> "$GITHUB_OUTPUT"
             echo "tag $tag already exists; this run publishes nothing"
-            if ! gh release view "$tag" > /dev/null 2>&1; then
-              echo "::warning::tag $tag exists without a GitHub Release; delete that tag before this version can be published again"
+            test "$(git cat-file -t "refs/tags/$tag")" = tag
+            if ! gh release view "$tag" --json isDraft --jq 'select(.isDraft == false)' | grep -q .; then
+              echo "::error::tag $tag exists without a published Release; preserve the immutable tag and review interrupted publication before recovery"
+              exit 1
             fi
           else
             echo "release=true" >> "$GITHUB_OUTPUT"
@@ -106,6 +112,12 @@ jobs:
           ref: 0a15e36e7f82b6ed45af6fa9759f29b40dcd965d
           path: dsh-core-016-alpha1
           persist-credentials: false
+      - uses: actions/checkout@v6
+        with:
+          repository: deepseek-ai/deepseek-harness
+          ref: ddefc45fbc7f8e46dd73185e68295696d1297887
+          path: dsh-core-016-alpha2
+          persist-credentials: false
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -145,6 +157,10 @@ jobs:
         run: npm test
         env:
           DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-016-alpha1
+      - name: Verify exact 0.1.6-alpha.2 source seam and official-first decisions
+        run: npm test
+        env:
+          DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-016-alpha2
       - name: Verify DSH 0.1.6 MCP v2 behavior
         shell: bash
         run: |
@@ -165,6 +181,18 @@ jobs:
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run packages/mcp/mcp-client/tests/apply.spec.ts packages/mcp/mcp-client/tests/protocol.spec.ts packages/mcp/mcp-client/tests/negotiation-lifecycle.spec.ts packages/mcp/mcp-client/tests/reconnect.spec.ts packages/mcp/mcp-client/tests/server-context.spec.ts packages/mcp/mcp-client/tests/tool-definition.spec.ts packages/mcp/mcp-resources/tests/resources.spec.ts apps/cli/tests/profile-mcp.spec.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha1 exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
+      - name: Verify exact alpha2 MCP, Browser Use and resource behavior before packing
+        env:
+          DSH_EXAMPLE_MODE: lib
+        shell: bash
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 install --frozen-lockfile --ignore-scripts
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 run build:native-system
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 run build:lib:host
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 run build:lib:client
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 exec vitest run packages/mcp/mcp-client/tests packages/mcp/mcp-resources/tests apps/cli/tests/profile-mcp.spec.ts packages/experimental/browser-use-playwright-mcp/tests/provider.spec.ts packages/experimental/browser-use-runtime/tests packages/browser-use/browser-use/tests/registry.spec.ts
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'
       - run: mkdir artifacts
       - run: npm pack --pack-destination artifacts
       - name: Write and verify SHA-256 manifest
@@ -191,6 +219,12 @@ jobs:
           set -euo pipefail
           tag="${{ needs.plan.outputs.tag }}"
           gh release create "$tag" artifacts/*.tgz artifacts/SHA256SUMS \
-            --verify-tag \
+            --verify-tag --draft \
             --title "dsh-playwright-host ${tag#v}" \
             --generate-notes
+          mkdir downloaded-release
+          gh release download "$tag" --dir downloaded-release --pattern '*.tgz' --pattern SHA256SUMS
+          cmp artifacts/SHA256SUMS downloaded-release/SHA256SUMS
+          (cd downloaded-release && sha256sum --check SHA256SUMS)
+          gh release edit "$tag" --draft=false
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" --jq '.immutable')" = true
