@@ -30,6 +30,7 @@ test('runtime CI builds alpha2 exports and fails immediately on native PowerShel
   const workflow = await readFile(new URL('./.github/workflows/test.yml', import.meta.url), 'utf8')
   for (const directory of ['dsh-core-contract', 'dsh-core-resources']) {
     assert.ok(workflow.includes(`--dir ${directory} run build:lib:host`), directory)
+    assert.ok(workflow.includes(`--dir ${directory} run build:lib:client`), `${directory} Node loaders emitted in Client pass`)
   }
   assert.ok(workflow.includes('--dir dsh-core-browser run build:native-system'))
   const lines = workflow.split('\n')

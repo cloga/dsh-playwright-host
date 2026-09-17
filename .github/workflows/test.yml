@@ -90,6 +90,9 @@ jobs:
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract run build:lib:host
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          # The official Client pass also emits Node loaders (Typert registry/API gateway).
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract run build:lib:client
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install the exact upstream MCP and CLI test closure
         if: matrix.dsh.version == '0.1.6-alpha.1'
         shell: pwsh
@@ -158,6 +161,8 @@ jobs:
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:native-system
           npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:lib:host
+          # Client pass owns some Node loader entries; do not omit it for headless tests.
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:lib:client
       - name: Install the exact upstream resource snapshot closure
         if: matrix.dsh.version == '0.1.6-alpha.1'
         run: npx --yes pnpm@11.7.0 --dir dsh-core-resources install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh-session-snapshot...' --filter '@deepseek-ai/dsh...'

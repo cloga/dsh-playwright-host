@@ -125,8 +125,10 @@ Alpha.2 headless process tests need the **built Host package exports**, not only
 selected Typert contributors: its runtime dependency resolver no longer obtains
 all dynamically loaded profile packages from the source aliases used by alpha.1.
 CI installs the exact frozen workspace with lifecycle scripts disabled, then runs
-the official `build:lib:host` script without modifying upstream source, and uses
-`DSH_EXAMPLE_MODE=lib` like the official recorded-process gates. Linux
+the official `build:lib:host` and `build:lib:client` scripts without modifying
+upstream source, and uses `DSH_EXAMPLE_MODE=lib` like the official recorded-process
+gates. The Client pass also emits Node loader entries (including Typert registry
+and API gateway), so a Host-only build is insufficient even for headless tests. Linux
 persisted-resume and snapshot tests also run `build:native-system` for file locking.
 Native PowerShell commands fail immediately before subsequent build/file checks.
 
