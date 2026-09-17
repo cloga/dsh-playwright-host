@@ -26,6 +26,23 @@ test('official-first decisions preserve required capabilities and separate evide
   for (const marker of [TARGET, 'browser:', 'REQUIRE_BROWSER_TEST', 'npm run test:browser', 'official-browser-contract:']) assert.ok(workflow.includes(marker), marker)
 })
 
+test('runtime CI builds alpha2 exports and fails immediately on native PowerShell errors', async () => {
+  const workflow = await readFile(new URL('./.github/workflows/test.yml', import.meta.url), 'utf8')
+  for (const directory of ['dsh-core-contract', 'dsh-core-resources']) {
+    assert.ok(workflow.includes(`--dir ${directory} run build:lib:host`), directory)
+  }
+  assert.ok(workflow.includes('--dir dsh-core-browser run build:native-system'))
+  const lines = workflow.split('\n')
+  let shell
+  for (let i = 0; i < lines.length; i++) {
+    if (/^      - /.test(lines[i])) shell = undefined
+    if (lines[i].trim() === 'shell: pwsh') shell = 'pwsh'
+    if (shell === 'pwsh' && /^          (npx|npm) /.test(lines[i])) {
+      assert.equal(lines[i + 1].trim(), 'if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }', `native command line ${i + 1}`)
+    }
+  }
+})
+
 test('exact official provider offers Agent lifecycle but not required caps or viewport configuration', { skip: !target }, async () => {
   const provider = await source('packages/experimental/browser-use-playwright-mcp/src/index.ts')
   const runtime = await source('packages/experimental/browser-use-runtime/src/mcp.ts')

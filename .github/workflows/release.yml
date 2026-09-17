@@ -184,10 +184,9 @@ jobs:
       - name: Verify exact alpha2 MCP, Browser Use and resource behavior before packing
         shell: bash
         run: |
-          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh-session-snapshot...' --filter '@deepseek-ai/dsh...' --filter '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp...' --filter '@deepseek-ai/dsh-experimental-browser-use-runtime...' --filter '@deepseek-ai/dsh-browser-use...'
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 install --frozen-lockfile --ignore-scripts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 run build:native-system
-          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
-          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
+          npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 run build:lib:host
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 exec vitest run packages/mcp/mcp-client/tests packages/mcp/mcp-resources/tests apps/cli/tests/profile-mcp.spec.ts packages/experimental/browser-use-playwright-mcp/tests/provider.spec.ts packages/experimental/browser-use-runtime/tests packages/browser-use/browser-use/tests/registry.spec.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
           npx --yes pnpm@11.7.0 --dir dsh-core-016-alpha2 exec vitest run --config vitest.snapshot.config.ts snapshots/session/headless.snapshot.ts -t 'mcp-resources'

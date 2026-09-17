@@ -78,15 +78,32 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
+      - name: Install the exact alpha2 workspace for runtime package resolution
+        if: matrix.dsh.version == '0.1.6-alpha.2'
+        shell: pwsh
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build all exact alpha2 Host package exports
+        if: matrix.dsh.version == '0.1.6-alpha.2'
+        shell: pwsh
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-contract run build:lib:host
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Install the exact upstream MCP and CLI test closure
+        if: matrix.dsh.version == '0.1.6-alpha.1'
         shell: pwsh
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh...'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build the exact upstream headless Typert contributors
+        if: matrix.dsh.version == '0.1.6-alpha.1'
         shell: pwsh
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npx --yes pnpm@11.7.0 --dir dsh-core-contract exec tsdown --env.DSH_BUILD_FACE host --filter '@deepseek-ai/dsh-llm' --filter '@deepseek-ai/dsh-permission-presets' --filter '@deepseek-ai/dsh-commands' --filter '@deepseek-ai/dsh-command-feedback' --filter '@deepseek-ai/dsh-goal' --filter '@deepseek-ai/dsh-subagent'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           foreach ($path in @(
             'packages/llm/llm/lib/typert.host.js',
             'packages/interaction/permission-presets/lib/typert.host.js',
@@ -103,6 +120,7 @@ jobs:
         shell: pwsh
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-contract exec vitest run packages/mcp/mcp-client/tests/apply.spec.ts packages/mcp/mcp-client/tests/protocol.spec.ts packages/mcp/mcp-client/tests/negotiation-lifecycle.spec.ts packages/mcp/mcp-client/tests/reconnect.spec.ts packages/mcp/mcp-client/tests/server-context.spec.ts packages/mcp/mcp-client/tests/tool-definition.spec.ts packages/mcp/mcp-resources/tests/resources.spec.ts apps/cli/tests/profile-mcp.spec.ts
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify SDK pagination failure is isolated from the headless Host route
         shell: pwsh
         run: npx --yes pnpm@11.7.0 --dir dsh-core-contract exec vitest run --config vitest.expected.config.ts apps/cli/tests/profiles/headless/tests/mcp-pagination.expected.e2e.ts
@@ -130,9 +148,19 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
+      - name: Install the exact alpha2 workspace for runtime package resolution
+        if: matrix.dsh.version == '0.1.6-alpha.2'
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-resources install --frozen-lockfile --ignore-scripts
+      - name: Build all exact alpha2 Host package exports and native locking
+        if: matrix.dsh.version == '0.1.6-alpha.2'
+        run: |
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:native-system
+          npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:lib:host
       - name: Install the exact upstream resource snapshot closure
+        if: matrix.dsh.version == '0.1.6-alpha.1'
         run: npx --yes pnpm@11.7.0 --dir dsh-core-resources install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-mcp-client...' --filter '@deepseek-ai/dsh-mcp-resources...' --filter '@deepseek-ai/dsh-typert-generator...' --filter '@deepseek-ai/dsh-session-snapshot...' --filter '@deepseek-ai/dsh...'
       - name: Build the exact upstream headless Typert contributors
+        if: matrix.dsh.version == '0.1.6-alpha.1'
         run: |
           npx --yes pnpm@11.7.0 --dir dsh-core-resources run build:native-system
           npx --yes pnpm@11.7.0 --dir dsh-core-resources exec tsc -b packages/typert/generator/tsconfig.json packages/llm/llm/tsconfig.json packages/interaction/permission-presets/tsconfig.json packages/interaction/commands/tsconfig.json packages/feedback/command-feedback/tsconfig.json packages/goal/goal/tsconfig.json packages/subagent/subagent/tsconfig.json
@@ -162,6 +190,9 @@ jobs:
           package-manager-cache: false
       - name: Install exact official Browser Use test closure
         run: npx --yes pnpm@11.7.0 --dir dsh-core-browser install --frozen-lockfile --ignore-scripts --filter '@deepseek-ai/dsh-experimental-browser-use-playwright-mcp...' --filter '@deepseek-ai/dsh-experimental-browser-use-runtime...' --filter '@deepseek-ai/dsh-browser-use...'
+      - name: Build native locking for persisted resume on Linux
+        if: runner.os == 'Linux'
+        run: npx --yes pnpm@11.7.0 --dir dsh-core-browser run build:native-system
       - name: Verify official provider, Agent isolation, cancellation and teardown
         run: npx --yes pnpm@11.7.0 --dir dsh-core-browser exec vitest run packages/experimental/browser-use-playwright-mcp/tests/provider.spec.ts packages/experimental/browser-use-runtime/tests/mcp.spec.ts packages/experimental/browser-use-runtime/tests/resources.spec.ts packages/experimental/browser-use-runtime/tests/agent-disposal.spec.ts packages/browser-use/browser-use/tests/registry.spec.ts
 
