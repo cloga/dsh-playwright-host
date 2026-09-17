@@ -26,6 +26,12 @@ const DSH_015_RC1_COMMIT = '183f08e9c6dde7e36cd2318eaee70b0da08fb35e'
 const DSH_015_RC2_COMMIT = 'fb2c4b9e698e30edb738bca4cf0618587db7d203'
 const DSH_016_ALPHA1_COMMIT = '0a15e36e7f82b6ed45af6fa9759f29b40dcd965d'
 const DSH_016_ALPHA1_TREE = '66c4c9c2053c6fcf91ad4e47d85bd77539c0b101'
+const DSH_016_ALPHA2_COMMIT = 'ddefc45fbc7f8e46dd73185e68295696d1297887'
+const DSH_016_ALPHA2_TREE = '5aca5ee6f8dfd110dc3ae199fbddf8a0f606625f'
+const MODERN_SOURCES = new Map([
+  [DSH_016_ALPHA1_COMMIT, DSH_016_ALPHA1_TREE],
+  [DSH_016_ALPHA2_COMMIT, DSH_016_ALPHA2_TREE],
+])
 const CERTIFIED_DSH_SOURCES = new Map([
   [DSH_RC1_COMMIT, { version: '0.1.2-rc.1', label: 'rc.1' }],
   [DSH_ALPHA1_COMMIT, { version: '0.1.3-alpha.1', label: '0.1.3-alpha.1' }],
@@ -34,6 +40,7 @@ const CERTIFIED_DSH_SOURCES = new Map([
   [DSH_015_RC1_COMMIT, { version: '0.1.5-rc.1', label: '0.1.5-rc.1' }],
   [DSH_015_RC2_COMMIT, { version: '0.1.5-rc.2', label: '0.1.5-rc.2' }],
   [DSH_016_ALPHA1_COMMIT, { version: '0.1.6-alpha.1', label: '0.1.6-alpha.1' }],
+  [DSH_016_ALPHA2_COMMIT, { version: '0.1.6-alpha.2', label: '0.1.6-alpha.2' }],
 ])
 // The repeated non-empty tools/list continuation-cursor guard landed in 0.1.5-alpha.2
 // and is unchanged in both 0.1.5-rc sources.
@@ -83,7 +90,7 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   const testWorkflow = (await readFile(testWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   const releaseWorkflow = (await readFile(releaseWorkflowUrl, 'utf8')).replaceAll('\r\n', '\n')
   assert.equal(manifest.name, 'dsh-playwright-host')
-  assert.equal(manifest.version, '0.1.7')
+  assert.equal(manifest.version, '0.1.8')
   assert.equal(manifest.dsh.bundle.patch, './cordis.patch.yml')
   assert.deepEqual(manifest.peerDependencies, {
     '@deepseek-ai/dsh-mcp-client': '>=0.1.6-alpha.1 <0.1.7-0',
@@ -145,7 +152,12 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
   assert.match(readme, new RegExp(DSH_016_ALPHA1_COMMIT))
   assert.match(readme, new RegExp(DSH_016_ALPHA1_TREE))
   assert.match(readme, /DSH_CORE_REF/)
-  assert.match(readme, /latest published release.*v0\.1\.6/)
+  assert.match(readme, /previous published release.*v0\.1\.7/)
+  assert.match(readme, /0\.1\.6-alpha\.2/)
+  assert.ok(readme.includes(DSH_016_ALPHA2_COMMIT))
+  assert.ok(readme.includes(DSH_016_ALPHA2_TREE))
+  assert.ok(changelog.includes('## 0.1.8'))
+  assert.ok(changelog.includes(DSH_016_ALPHA2_COMMIT))
   assert.match(readme, /cloga\/dsh-windows-ops#161/)
   assert.match(readme, /cloga\/deepseek-harness#33/)
   assert.match(changelog, /## 0\.1\.7/)
@@ -192,7 +204,7 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     'contract:',
     'resource-snapshot:',
     'DSH 0.1.6 MCP resource snapshot (Ubuntu)',
-    'needs: [certify, contract, resource-snapshot]',
+    'needs: [certify, contract, resource-snapshot, official-browser-contract, browser]',
     'vitest.snapshot.config.ts',
     'mcp-pagination.expected.e2e.ts',
     'protocol.spec.ts',
@@ -249,6 +261,12 @@ test('bundle pins the reviewed MCP and isolated Edge configuration', async () =>
     'npm pack --pack-destination artifacts',
     'sha256sum -- *.tgz > SHA256SUMS',
     'gh release create "$tag" artifacts/*.tgz artifacts/SHA256SUMS',
+    '--verify-tag --draft',
+    'preserve the immutable tag',
+    'gh release edit "$tag" --draft=false',
+    'cmp artifacts/SHA256SUMS downloaded-release/SHA256SUMS',
+    'DSH_CORE_PATH: ${{ github.workspace }}/dsh-core-016-alpha2',
+    DSH_016_ALPHA2_COMMIT,
   ]) assert.ok(releaseWorkflow.includes(marker), `release workflow omits ${marker}`)
   assert.equal(root, path.dirname(fileURLToPath(manifestUrl)))
 })
@@ -324,7 +342,7 @@ test('official certified DSH source preserves the required mcp-client stdio and 
     'const outcome = await connection.ready',
     'outcome.error !== undefined && config.failOnStartupError',
   ]
-  if (commit === DSH_016_ALPHA1_COMMIT) {
+  if (MODERN_SOURCES.has(commit)) {
     indexMarkers.push(
       'maxInstructionBytes: z.number().step(1).min(1).default(DEFAULT_MAX_INSTRUCTION_BYTES)',
       'registerServerContext(ctx, config.serverName, connection)',
@@ -364,12 +382,12 @@ test('official certified DSH source preserves the required mcp-client stdio and 
       'seenCursors.add(cursor)',
     ], `packages/mcp/mcp-client/src/tools.ts (${certification.label} cursor guard)`)
   }
-  if (commit === DSH_016_ALPHA1_COMMIT) {
+  if (MODERN_SOURCES.has(commit)) {
     const tree = execFileSync('git', ['--no-replace-objects', '-C', dshCorePath, 'show', '-s', '--format=%T', commit], {
       encoding: 'utf8',
       env: { ...process.env, GIT_NO_LAZY_FETCH: '1', GIT_OPTIONAL_LOCKS: '0' },
     }).trim()
-    assert.equal(tree, DSH_016_ALPHA1_TREE, '0.1.6-alpha.1 source tree must match the reviewed release tree')
+    assert.equal(tree, MODERN_SOURCES.get(commit), `${certification.version} source tree must match the reviewed release tree`)
 
     const baseManifest = JSON.parse(await readSource('packages/bundle/base/package.json', commit))
     const resourcesManifest = JSON.parse(await readSource('packages/mcp/mcp-resources/package.json', commit))
